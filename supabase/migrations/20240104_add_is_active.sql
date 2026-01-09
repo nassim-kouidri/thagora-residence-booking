@@ -6,13 +6,8 @@ add column if not exists is_active boolean default true;
 update profiles set is_active = true where is_active is null;
 
 -- Policy to allow admin to update profiles (for deactivation)
--- We already have policies, but let's ensure Admin can update.
--- RLS policies usually are for SELECT/INSERT/UPDATE/DELETE.
--- We might need a policy for UPDATE.
-
+-- CORRIGÉ : Utilisation de is_admin() pour éviter la récursion infinie
 create policy "Admins can update any profile"
 on profiles
 for update
-using (
-  auth.uid() in (select id from profiles where role = 'admin')
-);
+using ( is_admin() );

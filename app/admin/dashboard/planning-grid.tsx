@@ -169,22 +169,24 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
                           </div>
                           <div className="flex-1 flex justify-center pl-4 border-l border-white/5">
                               {isReserved ? (
-                                <div className="flex flex-col items-start w-full relative">
-                                  <div className="flex items-center gap-2">
-                                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                     <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Réservé</span>
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex flex-col items-start overflow-hidden mr-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                        <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Réservé</span>
+                                    </div>
+                                    <span className="text-sm text-zinc-300 font-medium truncate w-full">
+                                      {reservation?.profiles?.last_name} <span className="text-zinc-500 text-xs">({reservation?.profiles?.apartment_number})</span>
+                                    </span>
                                   </div>
-                                  <span className="text-sm text-zinc-300 font-medium truncate w-full">
-                                    {reservation?.profiles?.last_name} <span className="text-zinc-500 text-xs">({reservation?.profiles?.apartment_number})</span>
-                                  </span>
                                   
-                                  <div className="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex-shrink-0">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             handleCancel(reservation.id)
                                         }}
-                                        className="text-xs bg-red-900 text-white border border-red-700 px-3 py-1.5 rounded shadow-lg hover:bg-red-800 transition-transform hover:scale-105"
+                                        className="text-xs bg-red-900/50 text-red-200 border border-red-900 px-3 py-1.5 rounded hover:bg-red-900 transition-colors"
                                     >
                                         Annuler
                                     </button>
@@ -192,8 +194,8 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
                                 </div>
                               ) : (
                                 <div className="w-full flex items-center justify-between">
-                                    <span className="text-xs text-zinc-600 uppercase tracking-widest group-hover:text-zinc-500 transition-colors">Disponible</span>
-                                    <div className={`transition-all duration-300 transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 ${bookingLoading === `${space.id}-${time}` ? 'opacity-100 translate-x-0' : ''}`}>
+                                    <span className="text-xs text-zinc-600 uppercase tracking-widest transition-colors">Disponible</span>
+                                    <div className={`transition-all duration-300 transform ${bookingLoading === `${space.id}-${time}` ? 'opacity-100' : ''}`}>
                                         <button 
                                             onClick={() => handleReserve(space.id, time)}
                                             disabled={!!bookingLoading}

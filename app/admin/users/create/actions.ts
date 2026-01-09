@@ -41,23 +41,8 @@ export async function createUser(prevState: any, formData: FormData) {
     return { error: 'Erreur inattendue : Utilisateur non créé.', success: false, message: '' }
   }
 
-  // 2. Création du profil dans la table 'profiles'
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .insert({
-      id: authData.user.id,
-      first_name: firstName,
-      last_name: lastName,
-      apartment_number: apartment,
-      role: 'client'
-    })
-
-  if (profileError) {
-    console.error('Erreur Profile:', profileError)
-    // Idéalement, on devrait supprimer l'utilisateur Auth si le profil échoue pour garder la cohérence
-    // Pour l'instant, on retourne l'erreur.
-    return { error: `Le compte est créé mais le profil a échoué : ${profileError.message}`, success: false, message: '' }
-  }
+  // 2. Création du profil (Désormais gérée automatiquement par le Trigger Supabase 'on_auth_user_created')
+  // On ne fait plus d'insertion manuelle ici pour éviter les doublons.
 
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/users/create')
