@@ -62,7 +62,7 @@ export default async function ClientDashboard() {
         </div>
 
         {/* Grille du Planning */}
-        <div className="h-[calc(100vh-200px)] min-h-[500px]">
+        <div className="w-full">
            <ClientPlanningGrid 
               openingHour={openingHour} 
               closingHour={closingHour} 

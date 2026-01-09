@@ -61,7 +61,7 @@ export default async function AdminDashboard() {
              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-white">Planning des Réservations</h2>
              </div>
-             <div className="h-[600px]"> {/* Hauteur fixe pour le scroll interne du grid */}
+             <div className="w-full">
                 <PlanningGrid openingHour={openingHour} closingHour={closingHour} />
              </div>
         </section>

@@ -13,8 +13,8 @@ type PlanningGridProps = {
 
 // IDs des espaces en base de données
 const SPACES = [
-  { id: 1, name: '🏋️ Espace Sport + Piscine', color: 'bg-blue-900/20 border-blue-800' },
-  { id: 2, name: '🧖 Spa + Salle de jeux', color: 'bg-purple-900/20 border-purple-800' }
+  { id: 1, name: '🏋️ Espace Sport + Piscine', shortName: 'Sport & Piscine', color: 'bg-blue-900/20 border-blue-800' },
+  { id: 2, name: '🧖 Spa + Salle de jeux', shortName: 'Spa & Jeux', color: 'bg-purple-900/20 border-purple-800' }
 ]
 
 export default function PlanningGrid({ openingHour, closingHour }: PlanningGridProps) {
@@ -22,7 +22,8 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState<string | null>(null)
-  
+  const [activeTab, setActiveTab] = useState(SPACES[0].id)
+
   // Génération des créneaux basés sur les props
   const timeSlots = generateTimeSlots(openingHour, closingHour)
 
@@ -89,103 +90,128 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
   }
 
   return (
-    <div className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden flex flex-col h-full">
-      {/* Header du Calendrier */}
-      <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-        <div className="flex items-center space-x-4">
-          <div className="relative group">
-            <h3 className="text-lg font-bold text-[#F3E5AB] capitalize flex items-center gap-2 cursor-pointer group-hover:text-white transition-colors">
-              {formatDate(selectedDate.toDate())}
-              <span className="text-sm opacity-50 group-hover:opacity-100 transition-opacity">📅</span>
-            </h3>
-            <input 
-                type="date" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                value={selectedDate.format('YYYY-MM-DD')}
-                onChange={(e) => e.target.value && setSelectedDate(dayjs(e.target.value))}
-            />
-          </div>
-          {loading && <span className="text-xs text-zinc-500 animate-pulse">(Chargement...)</span>}
-          
-          <div className="flex space-x-1 ml-4">
-             <button onClick={handlePrevDay} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white">◀</button>
-             <button onClick={handleToday} className="px-2 py-1 text-xs hover:bg-zinc-800 rounded text-zinc-400 hover:text-white border border-zinc-700">Aujourd'hui</button>
-             <button onClick={handleNextDay} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white">▶</button>
-          </div>
+    <div className="bg-zinc-950 rounded-xl border border-white/10 overflow-hidden flex flex-col h-[calc(100vh-120px)] md:h-[700px] shadow-2xl shadow-black/50">
+      {/* Sticky Header Wrapper */}
+      <div className="sticky top-0 z-30 bg-zinc-900/90 backdrop-blur border-b border-white/5">
+        {/* Header du Calendrier */}
+        <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+            <div className="relative group">
+                <h3 className="text-xl font-bold text-[#F3E5AB] capitalize flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                {formatDate(selectedDate.toDate())}
+                <span className="text-sm opacity-50 group-hover:opacity-100 transition-opacity">📅</span>
+                </h3>
+                <input 
+                    type="date" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    value={selectedDate.format('YYYY-MM-DD')}
+                    onChange={(e) => e.target.value && setSelectedDate(dayjs(e.target.value))}
+                />
+            </div>
+            {loading && <span className="text-xs text-[#D4AF37] animate-pulse font-medium">Chargement...</span>}
+            </div>
+            
+            <div className="flex space-x-1">
+                <button onClick={handlePrevDay} className="p-2 hover:bg-white/5 rounded-full text-zinc-400 hover:text-[#D4AF37] transition-colors">◀</button>
+                <button onClick={handleToday} className="hidden sm:block px-3 py-1 text-xs font-medium uppercase tracking-wider hover:bg-[#D4AF37] hover:text-black rounded text-[#D4AF37] border border-[#D4AF37]/30 transition-all">Aujourd'hui</button>
+                <button onClick={handleNextDay} className="p-2 hover:bg-white/5 rounded-full text-zinc-400 hover:text-[#D4AF37] transition-colors">▶</button>
+            </div>
         </div>
-        <div className="text-sm text-zinc-500">
-           Horaires : {openingHour}h - {closingHour}h
+
+        {/* Mobile Tabs */}
+        <div className="flex md:hidden border-t border-white/5 bg-zinc-900/50">
+            {SPACES.map(space => (
+            <button
+                key={space.id}
+                onClick={() => setActiveTab(space.id)}
+                className={`flex-1 py-4 text-sm font-medium transition-all relative ${
+                activeTab === space.id ? 'text-[#D4AF37] bg-white/5' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+            >
+                {space.shortName}
+                {activeTab === space.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] shadow-[0_0_10px_#D4AF37]" />
+                )}
+            </button>
+            ))}
         </div>
       </div>
 
       {/* Grille des Créneaux */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {SPACES.map((space) => (
-            <div key={space.id} className="flex flex-col space-y-2">
-              <h4 className={`text-center py-2 font-medium rounded-t-lg border-t border-l border-r ${space.color} text-zinc-200`}>
-                {space.name}
-              </h4>
-              
-              <div className="space-y-2">
-                {timeSlots.map((time) => {
-                  const reservation = getReservationForSlot(space.id, time)
-                  const isReserved = !!reservation
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-0 md:p-4 bg-zinc-950 scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 h-full">
+          {SPACES.map((space) => {
+            const isHiddenOnMobile = space.id !== activeTab;
+            
+            return (
+                <div key={space.id} className={`flex flex-col space-y-2 ${isHiddenOnMobile ? 'hidden md:flex' : 'flex'}`}>
+                  {/* Desktop Title */}
+                  <h4 className={`hidden md:block text-center py-3 font-medium rounded-t-lg border-t border-l border-r border-white/5 bg-zinc-900/50 text-[#F3E5AB] tracking-wide`}>
+                    {space.name}
+                  </h4>
+                  
+                  <div className="space-y-3 p-4 md:p-0 pb-20 md:pb-0">
+                    {timeSlots.map((time) => {
+                      const reservation = getReservationForSlot(space.id, time)
+                      const isReserved = !!reservation
 
-                  return (
-                    <div 
-                      key={`${space.id}-${time}`} 
-                      className={`group relative flex items-center p-3 rounded-md border transition-colors ${
-                        isReserved 
-                          ? 'bg-red-900/10 border-red-900/30 cursor-not-allowed' 
-                          : 'bg-zinc-950 border-zinc-800 hover:border-[#D4AF37]/50 cursor-pointer'
-                      }`}
-                    >
-                      <div className={`w-16 font-mono text-sm ${isReserved ? 'text-red-400' : 'text-zinc-500 group-hover:text-[#F3E5AB]'}`}>
-                        {time}
-                      </div>
-                      <div className="flex-1 flex justify-center">
-                          {isReserved ? (
-                            <div className="flex flex-col items-center relative w-full group/reserved h-full justify-center">
-                              <span className="text-xs font-bold text-red-400">RÉSERVÉ</span>
-                              <span className="text-[10px] text-zinc-500">
-                                {reservation?.profiles?.last_name} ({reservation?.profiles?.apartment_number})
-                              </span>
-                              
-                              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/95 opacity-0 group-hover/reserved:opacity-100 transition-opacity rounded">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleCancel(reservation.id)
-                                    }}
-                                    className="text-xs bg-red-900/80 text-red-200 border border-red-700/50 px-3 py-1 rounded hover:bg-red-800 backdrop-blur-sm shadow-sm"
-                                >
-                                    Annuler
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-zinc-600 group-hover:text-zinc-400">Disponible</span>
-                          )}
-                      </div>
-                      
-                      {!isReserved && (
-                        <div className={`transition-opacity ${bookingLoading === `${space.id}-${time}` ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                            <button 
-                                onClick={() => handleReserve(space.id, time)}
-                                disabled={!!bookingLoading}
-                                className="text-xs bg-[#F3E5AB] text-black px-2 py-1 rounded font-medium hover:bg-[#D4AF37] disabled:opacity-50 disabled:cursor-wait"
-                            >
-                                {bookingLoading === `${space.id}-${time}` ? '...' : 'Réserver'}
-                            </button>
+                      return (
+                        <div 
+                          key={`${space.id}-${time}`} 
+                          className={`group relative flex items-center p-4 rounded-xl border transition-all duration-300 ${
+                            isReserved 
+                              ? 'bg-red-950/20 border-red-900/20' 
+                              : 'bg-zinc-900/40 border-white/5 hover:border-[#D4AF37]/50 hover:bg-zinc-900/80 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)]'
+                          }`}
+                        >
+                          <div className={`w-16 font-mono text-lg font-light tracking-wider ${isReserved ? 'text-red-500/50' : 'text-zinc-400 group-hover:text-[#F3E5AB]'}`}>
+                            {time}
+                          </div>
+                          <div className="flex-1 flex justify-center pl-4 border-l border-white/5">
+                              {isReserved ? (
+                                <div className="flex flex-col items-start w-full relative">
+                                  <div className="flex items-center gap-2">
+                                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                     <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Réservé</span>
+                                  </div>
+                                  <span className="text-sm text-zinc-300 font-medium truncate w-full">
+                                    {reservation?.profiles?.last_name} <span className="text-zinc-500 text-xs">({reservation?.profiles?.apartment_number})</span>
+                                  </span>
+                                  
+                                  <div className="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleCancel(reservation.id)
+                                        }}
+                                        className="text-xs bg-red-900 text-white border border-red-700 px-3 py-1.5 rounded shadow-lg hover:bg-red-800 transition-transform hover:scale-105"
+                                    >
+                                        Annuler
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-full flex items-center justify-between">
+                                    <span className="text-xs text-zinc-600 uppercase tracking-widest group-hover:text-zinc-500 transition-colors">Disponible</span>
+                                    <div className={`transition-all duration-300 transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 ${bookingLoading === `${space.id}-${time}` ? 'opacity-100 translate-x-0' : ''}`}>
+                                        <button 
+                                            onClick={() => handleReserve(space.id, time)}
+                                            disabled={!!bookingLoading}
+                                            className="text-xs bg-[#F3E5AB] text-black px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-[#D4AF37] hover:shadow-[#D4AF37]/20 disabled:opacity-50 disabled:cursor-wait"
+                                        >
+                                            {bookingLoading === `${space.id}-${time}` ? '...' : 'Réserver'}
+                                        </button>
+                                    </div>
+                                </div>
+                              )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+                      )
+                    })}
+                  </div>
+                </div>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -26,7 +26,6 @@ export type TenantHistory = {
 export type GlobalStats = {
   occupancyRate: number
   mostPopularSpace: { name: string; percentage: number }
-  peakHours: { hour: string; count: number }[]
   activeDays: { day: string; count: number }[]
   totalReservations: number
 }
@@ -70,8 +69,8 @@ export async function getStatistics(): Promise<{
     .select('*')
     .single()
   
-  const openingHour = settings?.opening_hour || 8
-  const closingHour = settings?.closing_hour || 22
+  const openingHour = Number(settings?.opening_hour) || 8
+  const closingHour = Number(settings?.closing_hour) || 22
   const dailyHours = closingHour - openingHour
 
   // --- Process Tenant History ---
@@ -149,22 +148,6 @@ export async function getStatistics(): Promise<{
   const occupancyRate = maxSlots > 0 ? Math.round((recentReservations.length / maxSlots) * 100) : 0
 
 
-  // C. Peak Hours (Heatmap)
-  const hourCounts = new Map<number, number>()
-  reservations.forEach(r => {
-    const h = dayjs(r.start_time).tz(TIMEZONE).hour()
-    hourCounts.set(h, (hourCounts.get(h) || 0) + 1)
-  })
-  
-  // Convert to array 08:00 - 22:00
-  const peakHours = []
-  for (let h = openingHour; h < closingHour; h++) {
-    peakHours.push({
-      hour: `${h}h`,
-      count: hourCounts.get(h) || 0
-    })
-  }
-
   // D. Active Days
   const daysMap = { 0: 'Dimanche', 1: 'Lundi', 2: 'Mardi', 3: 'Mercredi', 4: 'Jeudi', 5: 'Vendredi', 6: 'Samedi' }
   const dayCounts = new Map<number, number>()
@@ -184,7 +167,6 @@ export async function getStatistics(): Promise<{
     globalStats: {
       occupancyRate,
       mostPopularSpace: { name: mostPopularSpaceName, percentage: popSpacePercentage },
-      peakHours,
       activeDays,
       totalReservations: totalResCount
     }

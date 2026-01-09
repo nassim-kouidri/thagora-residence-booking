@@ -5,9 +5,6 @@ import { GlobalStats } from './actions'
 export default function StatsCards({ stats }: { stats: GlobalStats | null }) {
   if (!stats) return null
 
-  // Helper for Peak Hours Max (to scale bars)
-  const maxPeak = Math.max(...stats.peakHours.map(p => p.count), 1)
-
   return (
     <div className="space-y-6">
       {/* 1. Top Cards Row */}
@@ -54,35 +51,8 @@ export default function StatsCards({ stats }: { stats: GlobalStats | null }) {
       </div>
 
       {/* 2. Detailed Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="w-full">
         
-        {/* Peak Hours Heatmap (Bar Chart) */}
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-          <h3 className="text-[#F3E5AB] font-semibold mb-6">Heures de Pointe (Heatmap)</h3>
-          <div className="flex items-end justify-between h-48 gap-1 overflow-x-auto pb-2">
-            {stats.peakHours.map((ph, idx) => {
-              const heightPercent = (ph.count / maxPeak) * 100
-              const isHigh = heightPercent > 75
-              return (
-                <div key={idx} className="flex flex-col items-center gap-2 group flex-1 min-w-[20px]">
-                  <div className="relative w-full flex-1 flex items-end">
-                     {/* Tooltip on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-bold px-2 py-1 rounded whitespace-nowrap transition-opacity pointer-events-none z-10">
-                      {ph.count} rés.
-                    </div>
-                    {/* Bar */}
-                    <div 
-                      style={{ height: `${heightPercent || 2}%` }} 
-                      className={`w-full rounded-t-sm transition-all duration-500 ${isHigh ? 'bg-[#D4AF37]' : 'bg-zinc-700 group-hover:bg-zinc-600'}`}
-                    />
-                  </div>
-                  <span className="text-[10px] text-zinc-500 rotate-0 md:rotate-0">{ph.hour}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
         {/* Active Days List */}
         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
           <h3 className="text-[#F3E5AB] font-semibold mb-6">Jours d'activité</h3>
