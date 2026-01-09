@@ -32,7 +32,7 @@ export default function LoginForm() {
           htmlFor="identifier"
           className="block text-sm font-medium text-[#F3E5AB]"
         >
-          Nom de famille
+          Identifiant
         </label>
         <div className="mt-1">
           <input
@@ -42,7 +42,7 @@ export default function LoginForm() {
             autoComplete="username"
             required
             className="appearance-none block w-full px-3 py-3 border border-zinc-700 bg-zinc-900 placeholder-zinc-500 text-white rounded-md focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
-            placeholder="Ex: Salah"
+            placeholder="Nom de famille"
           />
         </div>
       </div>
