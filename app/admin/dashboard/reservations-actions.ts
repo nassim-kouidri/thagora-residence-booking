@@ -32,7 +32,7 @@ export async function createAdminReservation(spaceId: number, dateIso: string, t
   // 2. Calculer les horaires de début et de fin
   // On combine la date choisie (YYYY-MM-DD) avec l'heure du créneau (HH:mm)
   const startTime = dayjs(`${dateIso}T${time}:00`)
-  const endTime = startTime.add(1, 'hour')
+  const endTime = startTime.add(90, 'minute')
 
   // 3. Insertion en base de données
   const { error } = await supabase

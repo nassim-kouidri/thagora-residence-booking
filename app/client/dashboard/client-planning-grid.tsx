@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateTimeSlots, formatDate, formatDateForIso } from '@/utils/booking-logic'
+import { generateTimeSlots, formatDate, formatDateForIso, getSlotLabel } from '@/utils/booking-logic'
 import { getReservationsForDate, type Reservation } from '@/app/admin/dashboard/reservations-actions'
 import { createClientReservation, cancelClientReservation } from './client-actions'
 import dayjs from 'dayjs'
@@ -13,8 +13,8 @@ type ClientPlanningGridProps = {
 }
 
 const SPACES = [
-  { id: 1, name: '🏋️ Sport & Piscine', shortName: 'Sport & Piscine', color: 'bg-blue-900/20 border-blue-800' },
-  { id: 2, name: '🧖 Spa & Détente', shortName: 'Spa & Détente', color: 'bg-purple-900/20 border-purple-800' }
+  { id: 1, name: '🏋️ Salle de sport', shortName: 'Sport', color: 'bg-blue-900/20 border-blue-800' },
+  { id: 2, name: '🧖 Spa & Piscine', shortName: 'Spa', color: 'bg-purple-900/20 border-purple-800' }
 ]
 
 export default function ClientPlanningGrid({ openingHour, closingHour, currentUserId }: ClientPlanningGridProps) {
@@ -163,8 +163,8 @@ export default function ClientPlanningGrid({ openingHour, closingHour, currentUs
                             : 'bg-zinc-900/40 border-white/5 hover:border-[#D4AF37]/30 hover:bg-zinc-900/80 shadow-sm' // Disponible
                         }`}
                         >
-                        <div className="font-mono text-lg font-light text-zinc-400 w-16">
-                            {time}
+                        <div className="font-mono text-sm font-light text-zinc-400 w-32">
+                            {getSlotLabel(time)}
                         </div>
 
                         <div className="flex-1 flex justify-center px-2">

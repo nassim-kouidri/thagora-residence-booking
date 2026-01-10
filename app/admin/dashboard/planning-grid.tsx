@@ -2,22 +2,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateTimeSlots, formatDate, formatDateForIso } from '@/utils/booking-logic'
+import { generateTimeSlots, formatDate, formatDateForIso, getSlotLabel } from '@/utils/booking-logic'
 import { getReservationsForDate, createAdminReservation, cancelReservation, type Reservation } from './reservations-actions'
 import dayjs from 'dayjs'
 
 type PlanningGridProps = {
   openingHour: number
   closingHour: number
+  currentUserId: string
 }
 
 // IDs des espaces en base de données
 const SPACES = [
-  { id: 1, name: '🏋️ Espace Sport + Piscine', shortName: 'Sport & Piscine', color: 'bg-blue-900/20 border-blue-800' },
-  { id: 2, name: '🧖 Spa + Salle de jeux', shortName: 'Spa & Jeux', color: 'bg-purple-900/20 border-purple-800' }
+  { id: 1, name: '🏋️ Salle de sport', shortName: 'Sport', color: 'bg-blue-900/20 border-blue-800' },
+  { id: 2, name: '🧖 Spa & Piscine', shortName: 'Spa', color: 'bg-purple-900/20 border-purple-800' }
 ]
 
-export default function PlanningGrid({ openingHour, closingHour }: PlanningGridProps) {
+export default function PlanningGrid({ openingHour, closingHour, currentUserId }: PlanningGridProps) {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(false)
@@ -154,31 +155,48 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
                     {timeSlots.map((time) => {
                       const reservation = getReservationForSlot(space.id, time)
                       const isReserved = !!reservation
+                      const isMyReservation = isReserved && reservation.user_id === currentUserId
 
                       return (
                         <div 
                           key={`${space.id}-${time}`} 
                           className={`group relative flex items-center p-4 rounded-xl border transition-all duration-300 ${
                             isReserved 
-                              ? 'bg-red-950/20 border-red-900/20' 
+                              ? isMyReservation
+                                ? 'bg-[#F3E5AB]/10 border-[#F3E5AB]/30' // Style Admin (Gold)
+                                : 'bg-red-950/20 border-red-900/20' // Style Autre (Rouge)
                               : 'bg-zinc-900/40 border-white/5 hover:border-[#D4AF37]/50 hover:bg-zinc-900/80 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)]'
                           }`}
                         >
-                          <div className={`w-16 font-mono text-lg font-light tracking-wider ${isReserved ? 'text-red-500/50' : 'text-zinc-400 group-hover:text-[#F3E5AB]'}`}>
-                            {time}
+                          <div className={`w-32 font-mono text-sm font-light tracking-wider ${
+                            isReserved 
+                              ? isMyReservation ? 'text-[#F3E5AB]' : 'text-red-500/50'
+                              : 'text-zinc-400 group-hover:text-[#F3E5AB]'
+                          }`}>
+                            {getSlotLabel(time)}
                           </div>
                           <div className="flex-1 flex justify-center pl-4 border-l border-white/5">
                               {isReserved ? (
                                 <div className="flex items-center justify-between w-full">
-                                  <div className="flex flex-col items-start overflow-hidden mr-2">
+                                  {isMyReservation ? (
+                                    /* ADMIN: MA RÉSERVATION (GOLD) */
                                     <div className="flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                        <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Réservé</span>
+                                        <span className="text-xs font-bold text-[#F3E5AB] flex items-center gap-2 border border-[#F3E5AB]/30 px-3 py-1 rounded-full bg-[#F3E5AB]/5">
+                                          ✅ MON CRÉNEAU
+                                        </span>
                                     </div>
-                                    <span className="text-sm text-zinc-300 font-medium truncate w-full">
-                                      {reservation?.profiles?.last_name} <span className="text-zinc-500 text-xs">({reservation?.profiles?.apartment_number})</span>
-                                    </span>
-                                  </div>
+                                  ) : (
+                                    /* ADMIN: RÉSERVATION D'UN CLIENT (ROUGE) */
+                                    <div className="flex flex-col items-start overflow-hidden mr-2">
+                                      <div className="flex items-center gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                          <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Réservé</span>
+                                      </div>
+                                      <span className="text-sm text-zinc-300 font-medium truncate w-full">
+                                        {reservation?.profiles?.last_name} <span className="text-zinc-500 text-xs">({reservation?.profiles?.apartment_number})</span>
+                                      </span>
+                                    </div>
+                                  )}
                                   
                                   <div className="flex-shrink-0">
                                     <button
@@ -186,7 +204,11 @@ export default function PlanningGrid({ openingHour, closingHour }: PlanningGridP
                                             e.stopPropagation()
                                             handleCancel(reservation.id)
                                         }}
-                                        className="text-xs bg-red-900/50 text-red-200 border border-red-900 px-3 py-1.5 rounded hover:bg-red-900 transition-colors"
+                                        className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                                            isMyReservation 
+                                            ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                                            : 'bg-red-900/50 text-red-200 border border-red-900 hover:bg-red-900'
+                                        }`}
                                     >
                                         Annuler
                                     </button>

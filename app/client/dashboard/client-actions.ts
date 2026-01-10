@@ -44,7 +44,7 @@ export async function createClientReservation(spaceId: number, dateIso: string, 
 
   // 3. Calcul des horaires
   const startTime = dayjs(`${dateIso}T${time}:00`)
-  const endTime = startTime.add(1, 'hour')
+  const endTime = startTime.add(90, 'minute')
 
   // 4. Insertion
   const { error } = await supabase

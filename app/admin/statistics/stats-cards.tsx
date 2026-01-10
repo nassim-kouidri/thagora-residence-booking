@@ -8,16 +8,7 @@ export default function StatsCards({ stats }: { stats: GlobalStats | null }) {
   return (
     <div className="space-y-6">
       {/* 1. Top Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Occupancy Rate */}
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-          <h3 className="text-zinc-400 text-sm font-medium uppercase">Taux d'occupation (30j)</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#F3E5AB]">{stats.occupancyRate}%</span>
-            <span className="text-sm text-zinc-500">des créneaux</span>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Reservations */}
         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
           <h3 className="text-zinc-400 text-sm font-medium uppercase">Total Réservations</h3>

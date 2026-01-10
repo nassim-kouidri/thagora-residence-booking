@@ -59,10 +59,10 @@ export default async function AdminDashboard() {
         {/* Section 1 : Planning (Prioritaire) */}
         <section>
              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Planning des Réservations</h2>
+                <h2 className="text-2xl font-bold text-white">Planning des réservations</h2>
              </div>
              <div className="w-full">
-                <PlanningGrid openingHour={openingHour} closingHour={closingHour} />
+                <PlanningGrid openingHour={openingHour} closingHour={closingHour} currentUserId={user.id} />
              </div>
         </section>
 

@@ -24,7 +24,6 @@ export type TenantHistory = {
 }
 
 export type GlobalStats = {
-  occupancyRate: number
   mostPopularSpace: { name: string; percentage: number }
   activeDays: { day: string; count: number }[]
   totalReservations: number
@@ -139,14 +138,6 @@ export async function getStatistics(): Promise<{
   const popSpacePercentage = totalResCount > 0 ? Math.round((mostPopularCount / totalResCount) * 100) : 0
 
 
-  // B. Occupancy Rate (Last 30 Days)
-  const thirtyDaysAgo = now.subtract(30, 'day')
-  const recentReservations = reservations.filter(r => dayjs(r.start_time).isAfter(thirtyDaysAgo))
-  
-  // Theoretical Max Slots in 30 days = 30 days * dailyHours * 2 spaces
-  const maxSlots = 30 * dailyHours * 2
-  const occupancyRate = maxSlots > 0 ? Math.round((recentReservations.length / maxSlots) * 100) : 0
-
 
   // D. Active Days
   const daysMap = { 0: 'Dimanche', 1: 'Lundi', 2: 'Mardi', 3: 'Mercredi', 4: 'Jeudi', 5: 'Vendredi', 6: 'Samedi' }
@@ -165,7 +156,6 @@ export async function getStatistics(): Promise<{
   return {
     tenants: Array.from(tenantMap.values()),
     globalStats: {
-      occupancyRate,
       mostPopularSpace: { name: mostPopularSpaceName, percentage: popSpacePercentage },
       activeDays,
       totalReservations: totalResCount
