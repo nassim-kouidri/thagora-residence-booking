@@ -1,7 +1,7 @@
--- Trigger pour créer automatiquement un profil public quand un utilisateur s'inscrit
--- (Utile si on crée un user via le dashboard Supabase ou une autre méthode)
+-- Supprimer la colonne first_name de la table profiles
+ALTER TABLE profiles DROP COLUMN IF EXISTS first_name;
 
--- 1. Fonction déclenchée à l'insertion
+-- Mettre à jour la fonction handle_new_user pour ne plus utiliser first_name
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -18,11 +18,3 @@ begin
   return new;
 end;
 $$;
-
--- 2. Création du Trigger
-drop trigger if exists on_auth_user_created on auth.users;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row
-  execute procedure public.handle_new_user();

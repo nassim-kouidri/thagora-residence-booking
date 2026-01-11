@@ -6,7 +6,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-black flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-            <div className="relative w-64 h-32">
+            <div className="relative w-96 h-48">
                  <Image
                     src="/logo.jpeg"
                     alt="Thagora Luxury Real Estate"

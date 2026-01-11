@@ -32,66 +32,39 @@ export default function CreateUserForm() {
       <h2 className="text-xl font-bold text-[#F3E5AB] mb-4">Nouveau Locataire</h2>
       
       <form action={formAction} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-zinc-400">
-              Nom de famille
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              id="lastName"
-              required
-              placeholder="Ex: Salah"
-              className="mt-1 block w-full px-3 py-2 bg-black border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
-            />
-            <p className="mt-1 text-xs text-zinc-500">Servira d'identifiant de connexion.</p>
-          </div>
-
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-zinc-400">
-              Prénom
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              id="firstName"
-              required
-              placeholder="Ex: Mohamed"
-              className="mt-1 block w-full px-3 py-2 bg-black border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
-            />
-          </div>
+        <div>
+          <label htmlFor="lastName" className="block text-sm font-medium text-zinc-400">
+            Nom de famille <span className="text-zinc-600 text-xs">(Optionnel)</span>
+          </label>
+          <input
+            type="text"
+            name="lastName"
+            id="lastName"
+            placeholder="Ex: Famille Salah"
+            className="mt-1 block w-full px-3 py-2 bg-black border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
+          />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="apartment" className="block text-sm font-medium text-zinc-400">
-              N° Appartement
-            </label>
+        <div>
+          <label htmlFor="apartmentSuffix" className="block text-sm font-medium text-zinc-400">
+            N° Appartement
+          </label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <span className="inline-flex items-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-800 px-3 text-zinc-400 sm:text-sm">
+              A0
+            </span>
             <input
               type="text"
-              name="apartment"
-              id="apartment"
+              name="apartmentSuffix"
+              id="apartmentSuffix"
               required
-              placeholder="Ex: A01"
-              className="mt-1 block w-full px-3 py-2 bg-black border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
+              placeholder="3"
+              className="block w-full min-w-0 flex-1 rounded-none rounded-r-md border border-zinc-700 bg-black px-3 py-2 text-white placeholder-zinc-500 focus:border-[#D4AF37] focus:ring-[#D4AF37] sm:text-sm"
             />
           </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-zinc-400">
-              Mot de passe
-            </label>
-            <input
-              type="text"
-              name="password"
-              id="password"
-              required
-              placeholder="••••••••"
-              minLength={6}
-              className="mt-1 block w-full px-3 py-2 bg-black border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-[#D4AF37] focus:border-[#D4AF37] sm:text-sm"
-            />
-          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            L'identifiant et le mot de passe seront générés automatiquement (ex: A03).
+          </p>
         </div>
 
         {state?.error && (

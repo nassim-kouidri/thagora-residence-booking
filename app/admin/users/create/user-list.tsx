@@ -5,7 +5,6 @@ import { deactivateUser } from './actions'
 
 type User = {
   id: string
-  first_name: string
   last_name: string
   apartment_number: string
   created_at: string
@@ -49,7 +48,7 @@ export default function UserList({ users }: { users: User[] }) {
               </div>
               <div>
                 <div className="font-medium text-white">
-                  {user.first_name} {user.last_name}
+                  {user.last_name}
                 </div>
                 <div className="text-xs text-zinc-500">
                   Inscrit le {new Date(user.created_at).toLocaleDateString('fr-FR')}

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import dayjs from 'dayjs'
 import { revalidatePath } from 'next/cache'
 
@@ -17,43 +18,81 @@ export async function createClientReservation(spaceId: number, dateIso: string, 
     return { success: false, message: "Vous devez être connecté." }
   }
 
-  // 2. Vérification des QUOTAS
-  // Règle : Maximum une réservation par espace et par jour pour un client.
+  // 2. Préparation des horaires demandés
+  const requestedStartTime = dayjs(`${dateIso}T${time}:00`)
+  const requestedEndTime = requestedStartTime.add(90, 'minute')
+
+  // 2b. Vérification Créneau Collectif (Sécurité Backend)
+  const collectiveSlots = await getCollectiveSlots()
+  const currentDayOfWeek = dayjs(dateIso).day()
+  const [reqH, reqM] = time.split(':').map(Number)
+  const reqStartMin = reqH * 60 + reqM
+  const reqEndMin = reqStartMin + 90
+
+  const isCollective = collectiveSlots.some(cs => {
+      if (cs.day_of_week !== currentDayOfWeek) return false
+      const [sH, sM] = cs.start_time.split(':').map(Number)
+      const [eH, eM] = cs.end_time.split(':').map(Number)
+      const csStart = sH * 60 + sM
+      const csEnd = eH * 60 + eM
+      return reqStartMin < csEnd && reqEndMin > csStart
+  })
+
+  if (isCollective) {
+      return { success: false, message: "Pas besoin de réserver, c'est un créneau collectif ! Présentez-vous directement." }
+  }
+  
   const startOfDay = dayjs(dateIso).startOf('day').toISOString()
   const endOfDay = dayjs(dateIso).endOf('day').toISOString()
 
-  const { count, error: countError } = await supabase
+  // 3. Récupération de TOUTES les réservations du jour pour ce client
+  // (Pour vérifier le quota et la règle de synchronisation)
+  const { data: userReservations, error: fetchError } = await supabase
     .from('reservations')
-    .select('*', { count: 'exact', head: true })
+    .select('space_id, start_time')
     .eq('user_id', user.id)
-    .eq('space_id', spaceId)
     .eq('status', 'active')
     .gte('start_time', startOfDay)
     .lte('start_time', endOfDay)
 
-  if (countError) {
-    return { success: false, message: "Erreur lors de la vérification des quotas." }
+  if (fetchError) {
+    console.error("Erreur fetch user reservations:", fetchError)
+    return { success: false, message: "Erreur technique lors de la vérification des règles." }
   }
 
-  if (count && count > 0) {
-    return { 
-        success: false, 
-        message: "Quota atteint : Vous avez déjà une réservation sur cet espace pour cette journée." 
+  // 4. Vérification des Règles Métier
+  if (userReservations && userReservations.length > 0) {
+    for (const res of userReservations) {
+      // Règle A : Quota (Déjà réservé cet espace ?)
+      if (res.space_id === spaceId) {
+        return { 
+          success: false, 
+          message: "Quota atteint : Vous avez déjà une réservation sur cet espace pour cette journée." 
+        }
+      }
+
+      // Règle B : Synchronisation (Si autre espace réservé, même heure obligatoire)
+      // On compare l'heure de début existante avec celle demandée.
+      const resStart = dayjs(res.start_time)
+      
+      // On utilise isSame avec une tolérance à la minute près pour éviter les problèmes de secondes
+      if (!resStart.isSame(requestedStartTime, 'minute')) {
+        return {
+          success: false,
+          message: "Règle de réservation : Pour réserver deux espaces le même jour, vous devez obligatoirement choisir le même créneau horaire."
+        }
+      }
     }
   }
 
-  // 3. Calcul des horaires
-  const startTime = dayjs(`${dateIso}T${time}:00`)
-  const endTime = startTime.add(90, 'minute')
-
-  // 4. Insertion
+  // 5. Insertion (si tout est OK)
   const { error } = await supabase
     .from('reservations')
     .insert({
       user_id: user.id,
       space_id: spaceId,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
+      start_time: requestedStartTime.toISOString(),
+      end_time: requestedEndTime.toISOString(),
       status: 'active'
     })
 

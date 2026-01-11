@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateTimeSlots, formatDate, formatDateForIso, getSlotLabel } from '@/utils/booking-logic'
+import { generateSmartSlots, formatDate, formatDateForIso, CollectiveSlot } from '@/utils/booking-logic'
 import { getReservationsForDate, createAdminReservation, cancelReservation, type Reservation } from './reservations-actions'
 import dayjs from 'dayjs'
 
@@ -10,6 +10,7 @@ type PlanningGridProps = {
   openingHour: number
   closingHour: number
   currentUserId: string
+  collectiveSlots: CollectiveSlot[]
 }
 
 // IDs des espaces en base de données
@@ -18,15 +19,15 @@ const SPACES = [
   { id: 2, name: '🧖 Spa & Piscine', shortName: 'Spa', color: 'bg-purple-900/20 border-purple-800' }
 ]
 
-export default function PlanningGrid({ openingHour, closingHour, currentUserId }: PlanningGridProps) {
+export default function PlanningGrid({ openingHour, closingHour, currentUserId, collectiveSlots }: PlanningGridProps) {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(SPACES[0].id)
 
-  // Génération des créneaux basés sur les props
-  const timeSlots = generateTimeSlots(openingHour, closingHour)
+  // Génération des créneaux intelligents (Standards + Collectifs)
+  const slots = generateSmartSlots(openingHour, closingHour, selectedDate.toDate(), collectiveSlots)
 
   const fetchReservations = async () => {
     setLoading(true)
@@ -46,8 +47,6 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
   const handleToday = () => setSelectedDate(dayjs())
 
   const handleReserve = async (spaceId: number, time: string) => {
-      // Pas de confirmation nécessaire pour l'admin, c'est plus rapide.
-      // Ou une petite confirmation si on veut être prudent.
       if (!confirm(`Réserver le créneau de ${time} pour vous-même (Admin) ?`)) return
 
       const slotId = `${spaceId}-${time}`
@@ -57,7 +56,6 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
       const result = await createAdminReservation(spaceId, dateIso, time)
 
       if (result.success) {
-        // On rafraichit les données pour voir la réservation apparaitre
         await fetchReservations()
       } else {
         alert(result.message)
@@ -68,8 +66,6 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
   const handleCancel = async (reservationId: number) => {
     if (!confirm("Voulez-vous vraiment annuler cette réservation ?")) return
 
-    // On utilise un petit loading local si on veut, ou le loading global
-    // Pour faire simple et rapide on réutilise le loading global de la grille le temps de l'action
     setLoading(true) 
     
     const result = await cancelReservation(reservationId)
@@ -84,14 +80,13 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
 
   const getReservationForSlot = (spaceId: number, time: string) => {
     return reservations.find(r => {
-      // Comparaison simple des heures (Attention aux minutes si décalage)
       const resTime = dayjs(r.start_time).format('HH:mm')
       return r.space_id === spaceId && resTime === time
     })
   }
 
   return (
-    <div className="bg-zinc-950 rounded-xl border border-white/10 overflow-hidden flex flex-col h-[calc(100vh-120px)] md:h-[700px] shadow-2xl shadow-black/50">
+    <div className="bg-zinc-950 rounded-xl border border-white/10 overflow-hidden flex flex-col shadow-2xl shadow-black/50">
       {/* Sticky Header Wrapper */}
       <div className="sticky top-0 z-30 bg-zinc-900/90 backdrop-blur border-b border-white/5">
         {/* Header du Calendrier */}
@@ -129,7 +124,7 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
                 activeTab === space.id ? 'text-[#D4AF37] bg-white/5' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
             >
-                {space.shortName}
+                {space.name}
                 {activeTab === space.id && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] shadow-[0_0_10px_#D4AF37]" />
                 )}
@@ -139,7 +134,7 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
       </div>
 
       {/* Grille des Créneaux */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-0 md:p-4 bg-zinc-950 scrollbar-thin scrollbar-thumb-zinc-800">
+      <div className="flex-1 overflow-x-hidden p-0 md:p-4 bg-zinc-950">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 h-full">
           {SPACES.map((space) => {
             const isHiddenOnMobile = space.id !== activeTab;
@@ -152,14 +147,53 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
                   </h4>
                   
                   <div className="space-y-3 p-4 md:p-0 pb-20 md:pb-0">
-                    {timeSlots.map((time) => {
+                    {slots.length === 0 && (
+                      <div className="text-center py-8 text-zinc-600 italic">Aucun créneau disponible pour ce jour.</div>
+                    )}
+                    {slots.map((slot) => {
+                      // 1. GESTION CRÉNEAU COLLECTIF
+                      if (slot.type === 'collective') {
+                        // Si durée > 1h30, on augmente juste d'un demi (82 * 1.5 = 123px) au lieu de proportionnel
+                        const minHeight = slot.durationMinutes > 90 
+                            ? 82 * 1.5 
+                            : 82
+
+                        return (
+                          <div 
+                            key={`${space.id}-${slot.id}`}
+                            style={{ minHeight: `${minHeight}px` }}
+                            className="relative flex items-center justify-between p-4 rounded-xl border border-blue-500/30 bg-blue-900/10 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                          >
+                             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent pointer-events-none" />
+                             <div className="font-mono text-sm font-light text-blue-300 w-32 relative z-10">
+                                 {slot.label}
+                             </div>
+                             <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                                 <span className="text-xs font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                     ✨ ACCÈS LIBRE
+                                 </span>
+                                 <span className="text-[10px] text-blue-300/70 mt-1 md:hidden">
+                                     Sans réservation
+                                 </span>
+                             </div>
+                             <div className="hidden md:block w-24 text-right relative z-10">
+                                 <span className="text-[10px] text-blue-300/70 leading-tight block">
+                                     Créneau<br/>Collectif
+                                 </span>
+                             </div>
+                          </div>
+                        )
+                      }
+
+                      // 2. GESTION CRÉNEAU STANDARD
+                      const time = slot.start
                       const reservation = getReservationForSlot(space.id, time)
                       const isReserved = !!reservation
                       const isMyReservation = isReserved && reservation.user_id === currentUserId
 
                       return (
                         <div 
-                          key={`${space.id}-${time}`} 
+                          key={`${space.id}-${slot.id}`} 
                           className={`group relative flex items-center p-4 rounded-xl border transition-all duration-300 ${
                             isReserved 
                               ? isMyReservation
@@ -173,7 +207,7 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
                               ? isMyReservation ? 'text-[#F3E5AB]' : 'text-red-500/50'
                               : 'text-zinc-400 group-hover:text-[#F3E5AB]'
                           }`}>
-                            {getSlotLabel(time)}
+                            {slot.label}
                           </div>
                           <div className="flex-1 flex justify-center pl-4 border-l border-white/5">
                               {isReserved ? (
@@ -215,8 +249,8 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId }
                                   </div>
                                 </div>
                               ) : (
-                                <div className="w-full flex items-center justify-between">
-                                    <span className="text-xs text-zinc-600 uppercase tracking-widest transition-colors">Disponible</span>
+                                <div className="w-full flex items-center justify-between gap-2">
+                                    <span className="text-xs text-zinc-600 uppercase tracking-widest transition-colors">Libre</span>
                                     <div className={`transition-all duration-300 transform ${bookingLoading === `${space.id}-${time}` ? 'opacity-100' : ''}`}>
                                         <button 
                                             onClick={() => handleReserve(space.id, time)}

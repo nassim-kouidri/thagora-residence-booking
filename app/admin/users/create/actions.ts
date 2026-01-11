@@ -5,20 +5,22 @@ import { createAdminClient } from '@/utils/supabase/admin'
 
 export async function createUser(prevState: any, formData: FormData) {
   const lastName = formData.get('lastName') as string
-  const firstName = formData.get('firstName') as string
-  const apartment = formData.get('apartment') as string
-  const password = formData.get('password') as string
+  const apartmentSuffix = formData.get('apartmentSuffix') as string
 
-  if (!lastName || !firstName || !apartment || !password) {
-    return { error: 'Tous les champs sont obligatoires.', success: false, message: '' }
+  if (!apartmentSuffix) {
+    return { error: 'Le numéro d\'appartement est obligatoire.', success: false, message: '' }
   }
 
   const supabaseAdmin = createAdminClient()
 
-  // Génération de l'email technique : nomDeFamille@residence.com
-  // On nettoie le nom pour éviter les espaces ou caractères spéciaux dans l'email
-  const cleanLastName = lastName.trim().replace(/\s+/g, '').toLowerCase()
-  const email = `${cleanLastName}@residence.com`
+  // Génération automatique des identifiants
+  // Format demandé : A0 + suffixe (ex: A03)
+  const apartmentNumber = `A0${apartmentSuffix.trim()}`
+  const identifier = apartmentNumber
+  const password = apartmentNumber
+  
+  // Email technique pour Supabase
+  const email = `${identifier}@residence.com`
 
   // 1. Création de l'utilisateur dans Supabase Auth
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -26,9 +28,8 @@ export async function createUser(prevState: any, formData: FormData) {
     password,
     email_confirm: true, // Auto-confirm car créé par l'admin
     user_metadata: {
-      first_name: firstName,
-      last_name: lastName,
-      apartment_number: apartment
+      last_name: lastName || identifier, // Si pas de nom, on met l'identifiant
+      apartment_number: apartmentNumber
     }
   })
 
@@ -42,14 +43,13 @@ export async function createUser(prevState: any, formData: FormData) {
   }
 
   // 2. Création du profil (Désormais gérée automatiquement par le Trigger Supabase 'on_auth_user_created')
-  // On ne fait plus d'insertion manuelle ici pour éviter les doublons.
 
   revalidatePath('/admin/dashboard')
   revalidatePath('/admin/users/create')
   
   return { 
     success: true, 
-    message: `Compte créé avec succès pour ${firstName} ${lastName} (Appt ${apartment}). Identifiant de connexion : ${lastName}`,
+    message: `Compte créé avec succès pour l'appartement ${apartmentNumber}. Identifiant et Mot de passe : ${identifier}`,
     error: ''
   }
 }

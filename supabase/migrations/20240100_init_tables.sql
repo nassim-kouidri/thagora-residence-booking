@@ -17,7 +17,6 @@ insert into spaces (name, description) values
 -- 2. Création de la table des profils
 create table profiles (
                           id uuid references auth.users not null primary key,
-                          first_name text,
                           last_name text,
                           apartment_number text,
                           role text check (role in ('admin', 'client')) default 'client',

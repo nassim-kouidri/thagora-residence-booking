@@ -21,7 +21,6 @@ insert into spaces (name, description) values
 -- Création de la table des profils
 create table profiles (
   id uuid references auth.users not null primary key,
-  first_name text,
   last_name text,
   apartment_number text,
   role text check (role in ('admin', 'client')) default 'client',
@@ -76,10 +75,9 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, first_name, last_name, apartment_number, role)
+  insert into public.profiles (id, last_name, apartment_number, role)
   values (
     new.id,
-    new.raw_user_meta_data->>'first_name',
     new.raw_user_meta_data->>'last_name',
     new.raw_user_meta_data->>'apartment_number',
     coalesce(new.raw_user_meta_data->>'role', 'client') -- Par défaut client

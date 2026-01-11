@@ -4,6 +4,8 @@ import CreateUserForm from "./create-user-form";
 import UserList from "./user-list";
 import { getUsers } from "./actions";
 
+export const dynamic = 'force-dynamic'
+
 export default async function CreateUserPage() {
   const users = await getUsers() as any[] // Quick fix for type inference if needed
 

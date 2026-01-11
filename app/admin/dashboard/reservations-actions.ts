@@ -14,7 +14,6 @@ export type Reservation = {
   user_id: string
   profiles: {
     last_name: string
-    first_name: string
     apartment_number: string
   } | null
 }
@@ -84,7 +83,6 @@ export async function getReservationsForDate(dateIso: string) {
       user_id,
       profiles (
         last_name,
-        first_name,
         apartment_number
       )
     `)

@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/utils/supabase/admin'
 import LogoutButton from '@/app/components/logout-button'
 import { getAppSettings } from '@/app/admin/settings/actions'
+import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import ClientPlanningGrid from './client-planning-grid'
+import Image from 'next/image'
 
 export default async function ClientDashboard() {
   const supabase = await createClient()
@@ -30,21 +32,19 @@ export default async function ClientDashboard() {
   const openingHour = settings?.opening_hour ?? 8
   const closingHour = settings?.closing_hour ?? 22
 
+  // Récupération des créneaux collectifs
+  const collectiveSlots = await getCollectiveSlots()
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navbar / Header */}
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-[#F3E5AB]">Espace Client</h1>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center space-x-2 text-sm">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                <span className="text-zinc-400">Compte :</span>
-                <span className="font-mono text-[#F3E5AB]">{user.email}</span>
-            </div>
             <LogoutButton />
           </div>
         </div>
@@ -56,7 +56,7 @@ export default async function ClientDashboard() {
           <div>
             <h2 className="text-2xl font-bold text-white">Réservations</h2>
             <p className="text-zinc-400 text-sm mt-1">
-              Réservez vos créneaux pour aujourd'hui ou demain. (Max 1h / espace / jour)
+              Réservez vos créneaux pour aujourd'hui ou demain. (Max 1h30 / espace / jour)
             </p>
           </div>
         </div>
@@ -67,6 +67,7 @@ export default async function ClientDashboard() {
               openingHour={openingHour} 
               closingHour={closingHour} 
               currentUserId={user.id}
+              collectiveSlots={collectiveSlots}
            />
         </div>
 

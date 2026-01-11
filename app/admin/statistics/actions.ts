@@ -80,7 +80,7 @@ export async function getStatistics(): Promise<{
   profiles.forEach(p => {
     tenantMap.set(p.id, {
       id: p.id,
-      fullName: `${p.last_name} ${p.first_name || ''}`.trim(),
+      fullName: `${p.last_name}`.trim(),
       apartment: p.apartment_number || 'N/A',
       totalReservations: 0,
       upcomingReservations: [],
