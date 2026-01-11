@@ -3,10 +3,16 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
 import isBetween from 'dayjs/plugin/isBetween'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 
 dayjs.extend(isBetween)
 dayjs.extend(customParseFormat)
+dayjs.extend(utc)
+dayjs.extend(timezone)
 dayjs.locale('fr')
+
+export const APP_TIMEZONE = 'Africa/Algiers'
 
 export type CollectiveSlot = {
   id: number

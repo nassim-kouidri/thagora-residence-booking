@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateSmartSlots, formatDate, formatDateForIso, CollectiveSlot } from '@/utils/booking-logic'
+import { generateSmartSlots, formatDate, formatDateForIso, CollectiveSlot, APP_TIMEZONE } from '@/utils/booking-logic'
 import { getReservationsForDate, createAdminReservation, cancelReservation, type Reservation } from './reservations-actions'
 import dayjs from 'dayjs'
 
@@ -80,7 +80,7 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
 
   const getReservationForSlot = (spaceId: number, time: string) => {
     return reservations.find(r => {
-      const resTime = dayjs(r.start_time).format('HH:mm')
+      const resTime = dayjs(r.start_time).tz(APP_TIMEZONE).format('HH:mm')
       return r.space_id === spaceId && resTime === time
     })
   }

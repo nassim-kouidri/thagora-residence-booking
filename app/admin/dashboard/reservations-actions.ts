@@ -2,8 +2,10 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import dayjs from 'dayjs'
 import { revalidatePath } from 'next/cache'
+import { APP_TIMEZONE } from '@/utils/booking-logic'
 
 export type Reservation = {
   id: number
@@ -11,7 +13,7 @@ export type Reservation = {
   start_time: string
   end_time: string
   status: 'active' | 'cancelled'
-  user_id: string
+  user_id: string | null
   profiles: {
     last_name: string
     apartment_number: string
@@ -30,7 +32,7 @@ export async function createAdminReservation(spaceId: number, dateIso: string, t
 
   // 2. Calculer les horaires de début et de fin
   // On combine la date choisie (YYYY-MM-DD) avec l'heure du créneau (HH:mm)
-  const startTime = dayjs(`${dateIso}T${time}:00`)
+  const startTime = dayjs.tz(`${dateIso}T${time}:00`, APP_TIMEZONE)
   const endTime = startTime.add(90, 'minute')
 
   // 3. Insertion en base de données
@@ -58,21 +60,43 @@ export async function createAdminReservation(spaceId: number, dateIso: string, t
 }
 
 export async function getReservationsForDate(dateIso: string) {
+  // IMPORTANT:
+  // Cette action est appelée depuis des composants client (Admin & Client).
+  // Si on utilise uniquement le client "session" (RLS), on risque de ne voir
+  // que ses propres réservations (ou rien), ce qui casse l'affichage "créneau réservé".
+  // On utilise donc le client Admin (service role) pour lire le planning,
+  // puis on masque les infos sensibles pour les clients.
   const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return []
+
+  const supabaseAdmin = createAdminClient()
+
+  // Récupération du rôle (pour décider du niveau de détail à renvoyer)
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError) {
+    console.error('Erreur récupération rôle (getReservationsForDate):', profileError)
+  }
 
   // Début et fin de la journée (en UTC pour être sûr, ou en local si DB en local)
   // La DB est en timestamptz. Il faut envoyer des ISO string complets.
   // On assume que 'dateIso' est 'YYYY-MM-DD'.
   
   // Attention au fuseau horaire Africa/Algiers.
-  // Pour simplifier, on prend une plage large en UTC qui couvre la journée locale.
-  // Ou mieux, on utilise les fonctions de range de PostgREST si possible, mais ici on va faire simple :
-  // On charge les réservations où start_time commence ce jour là.
-  
-  const startOfDay = dayjs(dateIso).startOf('day').toISOString()
-  const endOfDay = dayjs(dateIso).endOf('day').toISOString()
+  // On utilise dayjs.tz pour définir le début et la fin de la journée dans le fuseau horaire de l'application.
+  const startOfDay = dayjs.tz(dateIso, APP_TIMEZONE).startOf('day').toISOString()
+  const endOfDay = dayjs.tz(dateIso, APP_TIMEZONE).endOf('day').toISOString()
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('reservations')
     .select(`
       id,
@@ -95,8 +119,20 @@ export async function getReservationsForDate(dateIso: string) {
     return []
   }
 
-  // TypeScript ne devine pas toujours les relations imbriquées parfaitement avec supabase-js
-  return data as unknown as Reservation[]
+  const reservations = data as unknown as Reservation[]
+
+  // Pour un client : on ne renvoie pas d'informations personnelles.
+  // On garde uniquement la présence d'une réservation pour marquer le créneau indisponible,
+  // et on conserve le user_id uniquement pour permettre l'affichage de "Mon créneau".
+  if (profile?.role !== 'admin') {
+    return reservations.map((r) => ({
+      ...r,
+      profiles: null,
+      user_id: r.user_id === user.id ? r.user_id : null,
+    }))
+  }
+
+  return reservations
 }
 
 export async function cancelReservation(reservationId: number) {

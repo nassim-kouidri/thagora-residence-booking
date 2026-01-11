@@ -5,7 +5,6 @@ import LogoutButton from '@/app/components/logout-button'
 import { getAppSettings } from '@/app/admin/settings/actions'
 import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import ClientPlanningGrid from './client-planning-grid'
-import Image from 'next/image'
 
 export default async function ClientDashboard() {
   const supabase = await createClient()
@@ -37,14 +36,16 @@ export default async function ClientDashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Navbar / Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-50">
+      {/* Navbar / Header - Simplified & Premium (aligné sur /admin/dashboard) */}
+      <header className="border-b border-white/5 bg-neutral-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-[#F3E5AB]">Espace Client</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-medium text-[#D4AF37] tracking-wider uppercase">
+              Thagora <span className="text-zinc-500 font-light">| Client</span>
+            </h1>
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-6">
             <LogoutButton />
           </div>
         </div>

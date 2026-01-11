@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import dayjs from 'dayjs'
 import { revalidatePath } from 'next/cache'
+import { APP_TIMEZONE } from '@/utils/booking-logic'
 
 /**
  * Crée une réservation pour le client connecté.
@@ -19,7 +20,7 @@ export async function createClientReservation(spaceId: number, dateIso: string, 
   }
 
   // 2. Préparation des horaires demandés
-  const requestedStartTime = dayjs(`${dateIso}T${time}:00`)
+  const requestedStartTime = dayjs.tz(`${dateIso}T${time}:00`, APP_TIMEZONE)
   const requestedEndTime = requestedStartTime.add(90, 'minute')
 
   // 2b. Vérification Créneau Collectif (Sécurité Backend)
@@ -42,8 +43,8 @@ export async function createClientReservation(spaceId: number, dateIso: string, 
       return { success: false, message: "Pas besoin de réserver, c'est un créneau collectif ! Présentez-vous directement." }
   }
   
-  const startOfDay = dayjs(dateIso).startOf('day').toISOString()
-  const endOfDay = dayjs(dateIso).endOf('day').toISOString()
+  const startOfDay = dayjs.tz(dateIso, APP_TIMEZONE).startOf('day').toISOString()
+  const endOfDay = dayjs.tz(dateIso, APP_TIMEZONE).endOf('day').toISOString()
 
   // 3. Récupération de TOUTES les réservations du jour pour ce client
   // (Pour vérifier le quota et la règle de synchronisation)
