@@ -39,12 +39,12 @@ export default async function AdminDashboard() {
   const collectiveSlots = await getCollectiveSlots()
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Navbar / Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur">
+    <div className="min-h-screen bg-neutral-950 text-zinc-100 font-sans selection:bg-[#D4AF37] selection:text-black">
+      {/* Navbar / Header - Simplified & Premium */}
+      <header className="border-b border-white/5 bg-neutral-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold text-[#F3E5AB]">Admin Dashboard</h1>
+            <div className="flex items-center gap-3">
+                <h1 className="text-lg font-medium text-[#D4AF37] tracking-wider uppercase">Thagora <span className="text-zinc-500 font-light">| Admin</span></h1>
             </div>
             
             <div className="flex items-center gap-6">
@@ -53,13 +53,10 @@ export default async function AdminDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
         
-        {/* Section 1 : Planning (Prioritaire) */}
-        <section>
-             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Planning des réservations</h2>
-             </div>
+        {/* Section 1 : Planning (Prioritaire & Central) */}
+        <section className="space-y-6">
              <div className="w-full">
                 <PlanningGrid 
                     openingHour={openingHour} 
@@ -70,53 +67,54 @@ export default async function AdminDashboard() {
              </div>
         </section>
 
-        <hr className="border-zinc-800" />
-
-        {/* Section 2 : Administration */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Section 2 : Navigation Rapide - Grid épurée */}
+        <section>
+            <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-widest mb-6 px-1">
+                Administration
+            </h2>
             
-            {/* Carte : Statistiques */}
-            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 hover:border-[#D4AF37] transition-colors group">
-                <h3 className="text-lg font-bold text-[#F3E5AB] mb-2">Statistiques</h3>
-                <p className="text-zinc-400 text-sm mb-6">
-                    Visualisez le taux d'occupation, les heures de pointe et l'historique complet des locataires.
-                </p>
-                <Link 
-                    href="/admin/statistics"
-                    className="inline-flex items-center justify-center w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-[#F3E5AB] hover:bg-[#D4AF37] group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
-                >
-                    Voir les statistiques
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Statistiques */}
+                <Link href="/admin/statistics" className="group block">
+                    <div className="h-full p-6 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-[#D4AF37]/30 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-medium text-zinc-200 group-hover:text-[#F3E5AB] transition-colors">Statistiques</h3>
+                            <span className="text-zinc-600 group-hover:text-[#D4AF37] transition-colors text-xl">↗</span>
+                        </div>
+                        <p className="text-zinc-500 text-sm leading-relaxed group-hover:text-zinc-400 transition-colors">
+                            Analysez le taux d'occupation et l'historique des réservations.
+                        </p>
+                    </div>
                 </Link>
-            </div>
 
-            {/* Carte : Configuration Générale */}
-            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 hover:border-[#D4AF37] transition-colors group">
-                <h3 className="text-lg font-bold text-[#F3E5AB] mb-2">Configuration</h3>
-                <p className="text-zinc-400 text-sm mb-6">
-                    Définissez les horaires d'ouverture et gérez les créneaux collectifs (accès libre).
-                </p>
-                <Link 
-                    href="/admin/settings"
-                    className="inline-flex items-center justify-center w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-[#F3E5AB] hover:bg-[#D4AF37] group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
-                >
-                    Gérer la configuration
+                {/* Configuration */}
+                <Link href="/admin/settings" className="group block">
+                    <div className="h-full p-6 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-[#D4AF37]/30 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-medium text-zinc-200 group-hover:text-[#F3E5AB] transition-colors">Configuration</h3>
+                            <span className="text-zinc-600 group-hover:text-[#D4AF37] transition-colors text-xl">⚙</span>
+                        </div>
+                        <p className="text-zinc-500 text-sm leading-relaxed group-hover:text-zinc-400 transition-colors">
+                            Gérez les horaires d'ouverture et les créneaux libres.
+                        </p>
+                    </div>
                 </Link>
-            </div>
 
-            {/* Carte : Gestion Utilisateurs */}
-            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 hover:border-[#D4AF37] transition-colors group">
-                <h3 className="text-lg font-bold text-[#F3E5AB] mb-2">Locataires</h3>
-                <p className="text-zinc-400 text-sm mb-6">
-                    Gérez les accès à la résidence. Ajoutez de nouveaux locataires ou supprimer les anciens locataires.
-                </p>
-                <Link 
-                    href="/admin/users/create"
-                    className="inline-flex items-center justify-center w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-[#F3E5AB] hover:bg-[#D4AF37] group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
-                >
-                    Gestion des locataires
+                {/* Locataires */}
+                <Link href="/admin/users/create" className="group block">
+                    <div className="h-full p-6 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-[#D4AF37]/30 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-medium text-zinc-200 group-hover:text-[#F3E5AB] transition-colors">Locataires</h3>
+                            <span className="text-zinc-600 group-hover:text-[#D4AF37] transition-colors text-xl">👥</span>
+                        </div>
+                        <p className="text-zinc-500 text-sm leading-relaxed group-hover:text-zinc-400 transition-colors">
+                            Ajoutez ou supprimez des comptes résidents.
+                        </p>
+                    </div>
                 </Link>
-            </div>
 
+            </div>
         </section>
 
       </main>
