@@ -13,9 +13,84 @@ const initialState = {
   success: false
 }
 
+const TIME_PATTERN = '^([01]\\d|2[0-3]):[0-5]\\d$'
+
 export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[] }) {
   const [state, formAction] = useActionState(addCollectiveSlot, initialState)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+
+  const formatTimeInput = (raw: string) => {
+    // Saisie 24h au clavier : on garde uniquement les chiffres.
+    // UX : dès la première frappe, on affiche le masque complet avec le séparateur.
+    // Exemple :
+    //  - "0"    -> "0_:__"
+    //  - "093"  -> "09:3_"
+    //  - "0930" -> "09:30"
+    // IMPORTANT:
+    // Comme on pré-remplit les minutes à `00` dès la 1ère frappe, certains navigateurs
+    // placent le curseur en fin de chaîne. La 2e frappe se retrouve alors après `:00`
+    // et le `raw` peut devenir `1_:006` (au lieu de `16:00`).
+    // On gère explicitement ces cas pour remapper correctement l'intention utilisateur.
+    const rawTrimmed = raw.trim()
+    const remapTailInput = () => {
+      // Cas heures incomplètes (avec `_`) + minutes affichées `00` + 1 ou 2 chiffres tapés à la fin
+      // Ex:
+      //  - `1_:006`  -> `16:00`
+      //  - `1_:0063` -> `16:3_`
+      const mUnderscore = /^(\d)_:00(\d{1,2})$/.exec(rawTrimmed)
+      if (mUnderscore) {
+        const h1 = mUnderscore[1]
+        const tail = mUnderscore[2]
+        const h2 = tail[0]
+        const minuteDigits = tail.slice(1)
+        return `${h1}${h2}${minuteDigits}`
+      }
+
+      // Cas heures complètes + minutes affichées `00` + 1 ou 2 chiffres tapés à la fin
+      // Ex:
+      //  - `16:003`  -> `16:3_`
+      //  - `16:0030` -> `16:30`
+      const mHours = /^(\d{2}):00(\d{1,2})$/.exec(rawTrimmed)
+      if (mHours) {
+        return `${mHours[1]}${mHours[2]}`
+      }
+
+      return null
+    }
+
+    const remappedDigits = remapTailInput()
+    const digits = (remappedDigits ?? rawTrimmed.replace(/\D/g, '')).slice(0, 4)
+    if (digits.length === 0) return ''
+
+    // Heures
+    let hhRaw = digits.slice(0, 2)
+    // Clamp uniquement quand l'utilisateur a saisi 2 chiffres
+    if (hhRaw.length === 2) {
+      const hhNum = Number(hhRaw)
+      if (!Number.isNaN(hhNum) && hhNum > 23) hhRaw = '23'
+    }
+    const hh = hhRaw.padEnd(2, '_')
+
+    // Minutes
+    // Exigence UX:
+    // - dès la 1re frappe, `mm` vaut par défaut `00`
+    // - `mm` ne doit jamais dépasser 59
+    let mm: string
+    if (digits.length <= 2) {
+      mm = '00'
+    } else if (digits.length === 3) {
+      mm = `${digits.slice(2, 3)}_`
+    } else {
+      let mmRaw = digits.slice(2, 4)
+      const mmNum = Number(mmRaw)
+      if (!Number.isNaN(mmNum) && mmNum > 59) mmRaw = '59'
+      mm = mmRaw
+    }
+
+    return `${hh}:${mm}`
+  }
 
   const handleDelete = async (id: number) => {
     if (!confirm('Supprimer ce créneau collectif ?')) return
@@ -70,18 +145,30 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
           <div className="flex gap-2">
             <div className="flex-1">
               <input 
-                type="time" 
+                type="text"
+                inputMode="numeric"
                 name="startTime" 
-                required 
+                required
+                placeholder="HH:mm"
+                pattern={TIME_PATTERN}
+                title="Format attendu : HH:mm (24h)"
+                value={startTime}
+                onChange={(e) => setStartTime(formatTimeInput(e.target.value))}
                 className="bg-black border border-zinc-700 text-white text-sm rounded-md block w-full p-2.5 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
             <span className="text-zinc-500 self-center">à</span>
             <div className="flex-1">
               <input 
-                type="time" 
+                type="text"
+                inputMode="numeric"
                 name="endTime" 
-                required 
+                required
+                placeholder="HH:mm"
+                pattern={TIME_PATTERN}
+                title="Format attendu : HH:mm (24h)"
+                value={endTime}
+                onChange={(e) => setEndTime(formatTimeInput(e.target.value))}
                 className="bg-black border border-zinc-700 text-white text-sm rounded-md block w-full p-2.5 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>

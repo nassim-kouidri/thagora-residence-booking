@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
+import { getEffectiveDayConfig } from '@/app/admin/settings/schedule-actions'
 import dayjs from 'dayjs'
 import { revalidatePath } from 'next/cache'
 import { APP_TIMEZONE } from '@/utils/booking-logic'
@@ -19,9 +20,27 @@ export async function createClientReservation(spaceId: number, dateIso: string, 
     return { success: false, message: "Vous devez être connecté." }
   }
 
+  // 1b. Vérifier la configuration effective (fermeture + bornes horaires)
+  const dayConfig = await getEffectiveDayConfig(dateIso)
+  if (dayConfig.is_closed) {
+    return { success: false, message: dayConfig.closure_message }
+  }
+
   // 2. Préparation des horaires demandés
   const requestedStartTime = dayjs.tz(`${dateIso}T${time}:00`, APP_TIMEZONE)
   const requestedEndTime = requestedStartTime.add(90, 'minute')
+
+  const startMinutes = requestedStartTime.hour() * 60 + requestedStartTime.minute()
+  const endMinutes = startMinutes + 90
+  const openingMinutes = dayConfig.opening_hour * 60
+  const closingMinutes = dayConfig.closing_hour * 60
+
+  if (startMinutes < openingMinutes || endMinutes > closingMinutes) {
+    return {
+      success: false,
+      message: `Créneau hors horaires : ${dayConfig.opening_hour}h00 – ${dayConfig.closing_hour}h00`,
+    }
+  }
 
   // 2b. Vérification Créneau Collectif (Sécurité Backend)
   const collectiveSlots = await getCollectiveSlots()

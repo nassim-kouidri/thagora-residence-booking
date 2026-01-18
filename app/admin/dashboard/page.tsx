@@ -5,8 +5,6 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import LogoutButton from '@/app/components/logout-button'
 import Link from 'next/link'
 import Image from 'next/image'
-
-import { getAppSettings } from '@/app/admin/settings/actions'
 import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import PlanningGrid from './planning-grid'
 
@@ -30,10 +28,9 @@ export default async function AdminDashboard() {
     redirect('/client/dashboard')
   }
 
-  // Récupération des paramètres globaux
-  const { data: settings } = await getAppSettings()
-  const openingHour = settings?.opening_hour ?? 8
-  const closingHour = settings?.closing_hour ?? 22
+  // Horaires de base (les horaires effectifs viennent de getEffectiveDayConfig côté grille)
+  const openingHour = 8
+  const closingHour = 22
 
   // Récupération des créneaux collectifs
   const collectiveSlots = await getCollectiveSlots()

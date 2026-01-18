@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { generateSmartSlots, formatDate, formatDateForIso, CollectiveSlot, APP_TIMEZONE } from '@/utils/booking-logic'
 import { getReservationsForDate, type Reservation } from '@/app/admin/dashboard/reservations-actions'
 import { createClientReservation, cancelClientReservation } from './client-actions'
+import { getEffectiveDayConfig, type EffectiveDayConfig } from '@/app/admin/settings/schedule-actions'
 import dayjs from 'dayjs'
 
 type ClientPlanningGridProps = {
@@ -28,9 +29,15 @@ export default function ClientPlanningGrid({ openingHour, closingHour, currentUs
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [dayConfig, setDayConfig] = useState<EffectiveDayConfig | null>(null)
+
+  const effectiveOpeningHour = dayConfig && !dayConfig.is_closed ? dayConfig.opening_hour : openingHour
+  const effectiveClosingHour = dayConfig && !dayConfig.is_closed ? dayConfig.closing_hour : closingHour
 
   // Génération des créneaux intelligents (Standards + Collectifs)
-  const slots = generateSmartSlots(openingHour, closingHour, selectedDate.toDate(), collectiveSlots)
+  const slots = dayConfig?.is_closed
+    ? []
+    : generateSmartSlots(effectiveOpeningHour, effectiveClosingHour, selectedDate.toDate(), collectiveSlots)
 
   const fetchReservations = async () => {
     setLoading(true)
@@ -40,7 +47,14 @@ export default function ClientPlanningGrid({ openingHour, closingHour, currentUs
     setLoading(false)
   }
 
+  const fetchDayConfig = async () => {
+    const dateIso = formatDateForIso(selectedDate.toDate())
+    const config = await getEffectiveDayConfig(dateIso)
+    setDayConfig(config)
+  }
+
   useEffect(() => {
+    fetchDayConfig()
     fetchReservations()
   }, [dayOffset]) // Re-fetch quand on change de jour
 
@@ -151,6 +165,12 @@ export default function ClientPlanningGrid({ openingHour, closingHour, currentUs
                   </h4>
                   
                   <div className="space-y-0">
+                    {dayConfig?.is_closed && (
+                      <div className="mb-3 rounded-lg border border-red-900/40 bg-red-900/10 p-4">
+                        <div className="text-sm font-semibold text-red-200">Espaces fermés</div>
+                        <div className="text-sm text-red-300/80 mt-1">{dayConfig.closure_message}</div>
+                      </div>
+                    )}
                     {slots.length === 0 && (
                       <div className="text-center py-12 text-zinc-600 font-light italic">Aucun créneau disponible.</div>
                     )}

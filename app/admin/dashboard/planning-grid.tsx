@@ -4,7 +4,11 @@
 import { useState, useEffect } from 'react'
 import { generateSmartSlots, formatDate, formatDateForIso, CollectiveSlot, APP_TIMEZONE } from '@/utils/booking-logic'
 import { getReservationsForDate, createAdminReservation, cancelReservation, type Reservation } from './reservations-actions'
+import { getEffectiveDayConfig, type EffectiveDayConfig } from '@/app/admin/settings/schedule-actions'
 import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+
+dayjs.extend(customParseFormat)
 
 type PlanningGridProps = {
   openingHour: number
@@ -25,9 +29,27 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
   const [loading, setLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(SPACES[0].id)
+  const [dayConfig, setDayConfig] = useState<EffectiveDayConfig | null>(null)
+
+  const handlePickDateFr = () => {
+    const current = selectedDate.format('DD/MM/YYYY')
+    const value = window.prompt('Choisir une date (JJ/MM/AAAA) :', current)
+    if (!value) return
+    const parsed = dayjs(value.trim(), 'DD/MM/YYYY', true)
+    if (!parsed.isValid()) {
+      alert('Date invalide. Format attendu : JJ/MM/AAAA')
+      return
+    }
+    setSelectedDate(parsed)
+  }
+
+  const effectiveOpeningHour = dayConfig && !dayConfig.is_closed ? dayConfig.opening_hour : openingHour
+  const effectiveClosingHour = dayConfig && !dayConfig.is_closed ? dayConfig.closing_hour : closingHour
 
   // Génération des créneaux intelligents (Standards + Collectifs)
-  const slots = generateSmartSlots(openingHour, closingHour, selectedDate.toDate(), collectiveSlots)
+  const slots = dayConfig?.is_closed
+    ? []
+    : generateSmartSlots(effectiveOpeningHour, effectiveClosingHour, selectedDate.toDate(), collectiveSlots)
 
   const fetchReservations = async () => {
     setLoading(true)
@@ -37,7 +59,14 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
     setLoading(false)
   }
 
+  const fetchDayConfig = async () => {
+    const dateIso = formatDateForIso(selectedDate.toDate())
+    const config = await getEffectiveDayConfig(dateIso)
+    setDayConfig(config)
+  }
+
   useEffect(() => {
+    fetchDayConfig()
     fetchReservations()
   }, [selectedDate])
 
@@ -101,7 +130,11 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
                 </button>
                 
                 {/* Date & Calendar Trigger */}
-                <div className="relative group flex items-center justify-center gap-3 min-w-[200px] px-2 cursor-pointer">
+                <div
+                    className="relative group flex items-center justify-center gap-3 min-w-[200px] px-2 cursor-pointer"
+                    onClick={handlePickDateFr}
+                    title="Cliquer pour saisir une date (JJ/MM/AAAA)"
+                >
                     <span className="text-lg font-medium text-zinc-200 capitalize group-hover:text-[#D4AF37] transition-colors py-1">
                         {formatDate(selectedDate.toDate())}
                     </span>
@@ -111,12 +144,11 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
                         🗓️
                     </span>
 
-                    <input 
-                        type="date" 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        value={selectedDate.format('YYYY-MM-DD')}
-                        onChange={(e) => e.target.value && setSelectedDate(dayjs(e.target.value))}
-                    />
+                    {/*
+                      NOTE:
+                      On n'utilise pas `type="date"` ici car l'affichage (mm/dd/yyyy, etc.) dépend de la locale navigateur.
+                      On force une saisie francophone via une saisie `JJ/MM/AAAA`.
+                    */}
                 </div>
 
                 <button 
@@ -171,6 +203,12 @@ export default function PlanningGrid({ openingHour, closingHour, currentUserId, 
                   </h4>
                   
                   <div className="space-y-2">
+                    {dayConfig?.is_closed && (
+                      <div className="mb-3 rounded-lg border border-red-900/40 bg-red-900/10 p-4">
+                        <div className="text-sm font-semibold text-red-200">Espaces fermés</div>
+                        <div className="text-sm text-red-300/80 mt-1">{dayConfig.closure_message}</div>
+                      </div>
+                    )}
                     {slots.length === 0 && (
                       <div className="text-center py-12 text-zinc-600 font-light italic">Aucun créneau disponible.</div>
                     )}

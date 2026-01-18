@@ -6,6 +6,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import dayjs from 'dayjs'
 import { revalidatePath } from 'next/cache'
 import { APP_TIMEZONE } from '@/utils/booking-logic'
+import { getEffectiveDayConfig } from '@/app/admin/settings/schedule-actions'
 
 export type Reservation = {
   id: number
@@ -28,6 +29,12 @@ export async function createAdminReservation(spaceId: number, dateIso: string, t
   
   if (!user) {
     return { success: false, message: "Utilisateur non connecté." }
+  }
+
+  // 1b. Vérifier que la journée n'est pas marquée comme fermée
+  const dayConfig = await getEffectiveDayConfig(dateIso)
+  if (dayConfig.is_closed) {
+    return { success: false, message: `Impossible de réserver : espaces fermés (${dayConfig.closure_message}).` }
   }
 
   // 2. Calculer les horaires de début et de fin
