@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { addCollectiveSlot, deleteCollectiveSlot, type CollectiveSlot } from '@/app/admin/settings/collective-actions'
 
 const DAYS = [
@@ -20,6 +20,23 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+
+  const startInputRef = useRef<HTMLInputElement | null>(null)
+  const endInputRef = useRef<HTMLInputElement | null>(null)
+  const pendingStartDigitsBeforeCaretRef = useRef<number | null>(null)
+  const pendingEndDigitsBeforeCaretRef = useRef<number | null>(null)
+
+  const caretPosFromDigitCount = (formatted: string, digitCount: number) => {
+    if (digitCount <= 0) return 0
+    let seen = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/[0-9]/.test(formatted[i])) {
+        seen++
+        if (seen === digitCount) return i + 1
+      }
+    }
+    return formatted.length
+  }
 
   const formatTimeInput = (raw: string) => {
     // Saisie 24h au clavier : on garde uniquement les chiffres.
@@ -92,6 +109,46 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
     return `${hh}:${mm}`
   }
 
+  // Fix UX:
+  // Sur un input contrôlé avec masque (HH:mm), certains navigateurs replacent le
+  // curseur en fin de chaîne à chaque onChange. On recalcule une position stable
+  // basée sur le nombre de chiffres avant le caret.
+  useEffect(() => {
+    const digitsBefore = pendingStartDigitsBeforeCaretRef.current
+    if (digitsBefore == null) return
+    const el = startInputRef.current
+    if (!el) return
+
+    const pos = caretPosFromDigitCount(startTime, digitsBefore)
+    pendingStartDigitsBeforeCaretRef.current = null
+
+    requestAnimationFrame(() => {
+      try {
+        el.setSelectionRange(pos, pos)
+      } catch {
+        // noop
+      }
+    })
+  }, [startTime])
+
+  useEffect(() => {
+    const digitsBefore = pendingEndDigitsBeforeCaretRef.current
+    if (digitsBefore == null) return
+    const el = endInputRef.current
+    if (!el) return
+
+    const pos = caretPosFromDigitCount(endTime, digitsBefore)
+    pendingEndDigitsBeforeCaretRef.current = null
+
+    requestAnimationFrame(() => {
+      try {
+        el.setSelectionRange(pos, pos)
+      } catch {
+        // noop
+      }
+    })
+  }, [endTime])
+
   const handleDelete = async (id: number) => {
     if (!confirm('Supprimer ce créneau collectif ?')) return
     setIsDeleting(id)
@@ -153,7 +210,13 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
                 pattern={TIME_PATTERN}
                 title="Format attendu : HH:mm (24h)"
                 value={startTime}
-                onChange={(e) => setStartTime(formatTimeInput(e.target.value))}
+                onChange={(e) => {
+                  const el = e.currentTarget
+                  const caret = el.selectionStart ?? el.value.length
+                  pendingStartDigitsBeforeCaretRef.current = el.value.slice(0, caret).replace(/\D/g, '').length
+                  setStartTime(formatTimeInput(el.value))
+                }}
+                ref={startInputRef}
                 className="bg-black border border-zinc-700 text-white text-sm rounded-md block w-full p-2.5 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>
@@ -168,7 +231,13 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
                 pattern={TIME_PATTERN}
                 title="Format attendu : HH:mm (24h)"
                 value={endTime}
-                onChange={(e) => setEndTime(formatTimeInput(e.target.value))}
+                onChange={(e) => {
+                  const el = e.currentTarget
+                  const caret = el.selectionStart ?? el.value.length
+                  pendingEndDigitsBeforeCaretRef.current = el.value.slice(0, caret).replace(/\D/g, '').length
+                  setEndTime(formatTimeInput(el.value))
+                }}
+                ref={endInputRef}
                 className="bg-black border border-zinc-700 text-white text-sm rounded-md block w-full p-2.5 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
               />
             </div>

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-import PwaRegister from '@/app/components/pwa-register'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,7 +18,6 @@ export const metadata: Metadata = {
     template: '%s | Thagora',
   },
   description: "Application de réservation des espaces communs de la résidence.",
-  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       // Réutilise le logo existant (public/logo.jpeg) en attendant un favicon dédié.
@@ -43,7 +41,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <PwaRegister />
         {children}
       </body>
     </html>

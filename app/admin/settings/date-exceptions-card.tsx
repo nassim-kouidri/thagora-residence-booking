@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import {
@@ -39,6 +39,21 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [dateFr, setDateFr] = useState('')
 
+  const dateInputRef = useRef<HTMLInputElement | null>(null)
+  const pendingDateDigitsBeforeCaretRef = useRef<number | null>(null)
+
+  const caretPosFromDigitCount = (formatted: string, digitCount: number) => {
+    if (digitCount <= 0) return 0
+    let seen = 0
+    for (let i = 0; i < formatted.length; i++) {
+      if (/[0-9]/.test(formatted[i])) {
+        seen++
+        if (seen === digitCount) return i + 1
+      }
+    }
+    return formatted.length
+  }
+
   const formatDateFrInput = (raw: string) => {
     // On laisse l'utilisateur taper uniquement des chiffres.
     // UX : dès la première frappe, on affiche le masque complet avec les séparateurs.
@@ -54,6 +69,29 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
     const yyyy = digits.slice(4, 8).padEnd(4, '_')
     return `${dd}/${mm}/${yyyy}`
   }
+
+  // Fix UX:
+  // Lorsque l'on formate un input contrôlé (masque), certains navigateurs replacent
+  // le curseur en fin de champ. On conserve ici une position cohérente basée sur
+  // le nombre de chiffres saisis avant le caret.
+  useEffect(() => {
+    const digitsBefore = pendingDateDigitsBeforeCaretRef.current
+    if (digitsBefore == null) return
+    const el = dateInputRef.current
+    if (!el) return
+
+    const pos = caretPosFromDigitCount(dateFr, digitsBefore)
+    pendingDateDigitsBeforeCaretRef.current = null
+
+    // Attendre le repaint pour éviter les sauts de curseur.
+    requestAnimationFrame(() => {
+      try {
+        el.setSelectionRange(pos, pos)
+      } catch {
+        // Certains navigateurs peuvent refuser setSelectionRange dans quelques cas.
+      }
+    })
+  }, [dateFr])
 
   const dateDigitsCount = dateFr.replace(/\D/g, '').length
   const dateIso = frDateToIso(dateFr)
@@ -117,7 +155,13 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
               inputMode="numeric"
               placeholder="JJ/MM/AAAA"
               value={dateFr}
-              onChange={(e) => setDateFr(formatDateFrInput(e.target.value))}
+              onChange={(e) => {
+                const el = e.currentTarget
+                const caret = el.selectionStart ?? el.value.length
+                pendingDateDigitsBeforeCaretRef.current = el.value.slice(0, caret).replace(/\D/g, '').length
+                setDateFr(formatDateFrInput(el.value))
+              }}
+              ref={dateInputRef}
               className="bg-black border border-zinc-700 text-white text-sm rounded-md block w-full p-2.5 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
             />
             <input type="hidden" name="date" value={dateIso ?? ''} />
