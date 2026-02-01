@@ -68,7 +68,11 @@ export default function LoginForm() {
       </div>
 
       {state?.error && (
-        <div className="text-red-400 text-sm text-center bg-red-900/20 p-2 rounded border border-red-900">
+        <div
+          className="text-red-400 text-sm text-center bg-red-900/20 p-2 rounded border border-red-900"
+          role="alert"
+          aria-live="assertive"
+        >
           {state.error}
         </div>
       )}

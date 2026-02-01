@@ -44,7 +44,7 @@ export default async function SettingsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[#F3E5AB]">Configuration</h1>
-            <p className="text-zinc-400 mt-1">Gérez les horaires d'ouverture et les créneaux collectifs.</p>
+            <p className="text-zinc-400 mt-1">Gérez les horaires d&apos;ouverture et les créneaux collectifs.</p>
           </div>
           <Link
             href="/admin/dashboard"

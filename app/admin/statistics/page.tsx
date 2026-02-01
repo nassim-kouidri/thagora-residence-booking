@@ -22,7 +22,7 @@ export default async function StatisticsPage() {
           <div>
             <h1 className="text-3xl font-bold text-[#F3E5AB]">Statistiques</h1>
             <p className="text-zinc-400 mt-1">
-              Analyse de l'occupation et historique des locataires.
+              Analyse de l&apos;occupation et historique des locataires.
             </p>
           </div>
           <Link

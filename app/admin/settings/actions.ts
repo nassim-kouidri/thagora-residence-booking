@@ -34,7 +34,7 @@ export async function getAppSettings(): Promise<{ data?: AppSettings; error?: st
  * Réservé à l'administrateur.
  */
 export async function updateAppSettings(
-  prevState: any,
+  _prevState: unknown,
   formData: FormData
 ) {
   const openingHour = parseInt(formData.get('openingHour') as string)

@@ -63,7 +63,7 @@ export default function CreateUserForm() {
             />
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            L'identifiant et le mot de passe seront générés automatiquement (ex: A03).
+            L&apos;identifiant et le mot de passe seront générés automatiquement (ex: A03).
           </p>
         </div>
 

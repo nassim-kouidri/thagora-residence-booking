@@ -3,7 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/utils/supabase/admin'
 
-export async function createUser(prevState: any, formData: FormData) {
+export type ClientProfile = {
+  id: string
+  last_name: string
+  apartment_number: string
+  is_active: boolean
+  created_at: string
+}
+
+export async function createUser(_prevState: unknown, formData: FormData) {
   const lastName = formData.get('lastName') as string
   const apartmentSuffix = formData.get('apartmentSuffix') as string
 
@@ -69,7 +77,7 @@ export async function getUsers() {
     return []
   }
 
-  return users
+  return (users ?? []) as ClientProfile[]
 }
 
 export async function deactivateUser(userId: string) {

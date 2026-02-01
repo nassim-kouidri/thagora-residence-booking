@@ -64,7 +64,7 @@ export async function getWeeklySchedules(): Promise<WeeklySchedule[]> {
   return data as WeeklySchedule[]
 }
 
-export async function upsertWeeklySchedule(prevState: any, formData: FormData) {
+export async function upsertWeeklySchedule(_prevState: unknown, formData: FormData) {
   const dayOfWeek = parseInt(formData.get('dayOfWeek') as string)
   const openingHour = parseInt(formData.get('openingHour') as string)
   const closingHour = parseInt(formData.get('closingHour') as string)
@@ -130,7 +130,7 @@ export async function getDateScheduleExceptions(): Promise<DateScheduleException
   return data as DateScheduleException[]
 }
 
-export async function upsertDateScheduleException(prevState: any, formData: FormData) {
+export async function upsertDateScheduleException(_prevState: unknown, formData: FormData) {
   const dateIso = (formData.get('date') as string)?.trim()
   const mode = (formData.get('mode') as string) || 'hours'
   const closureMessage = (formData.get('closureMessage') as string)?.trim()

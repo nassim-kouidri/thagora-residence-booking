@@ -19,8 +19,16 @@ export type TenantHistory = {
   fullName: string
   apartment: string
   totalReservations: number
-  upcomingReservations: any[]
-  pastReservations: any[]
+  upcomingReservations: ReservationSummary[]
+  pastReservations: ReservationSummary[]
+}
+
+export type ReservationSummary = {
+  id: number
+  spaceName: string
+  date: string
+  time: string
+  fullDate: Date
 }
 
 export type GlobalStats = {
@@ -36,6 +44,12 @@ export async function getStatistics(): Promise<{
 }> {
   const supabase = createAdminClient()
 
+  const emptyStats: GlobalStats = {
+    mostPopularSpace: { name: 'Aucun', percentage: 0 },
+    activeDays: [],
+    totalReservations: 0,
+  }
+
   // 1. Fetch Users (Profiles)
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
@@ -43,14 +57,14 @@ export async function getStatistics(): Promise<{
     .eq('role', 'client')
     // We include inactive users for history purposes? Yes.
   
-  if (profilesError) return { tenants: [], globalStats: null as any, error: 'Erreur chargement profils' }
+  if (profilesError) return { tenants: [], globalStats: emptyStats, error: 'Erreur chargement profils' }
 
   // 2. Fetch Spaces
   const { data: spaces, error: spacesError } = await supabase
     .from('spaces')
     .select('id, name')
   
-  if (spacesError) return { tenants: [], globalStats: null as any, error: 'Erreur chargement espaces' }
+  if (spacesError) return { tenants: [], globalStats: emptyStats, error: 'Erreur chargement espaces' }
 
   const spaceMap = new Map(spaces.map(s => [s.id, s.name]))
 
@@ -60,17 +74,7 @@ export async function getStatistics(): Promise<{
     .select('*')
     .order('start_time', { ascending: false })
 
-  if (resError) return { tenants: [], globalStats: null as any, error: 'Erreur chargement réservations' }
-
-  // 4. Fetch App Settings for occupancy calculation
-  const { data: settings } = await supabase
-    .from('app_settings')
-    .select('*')
-    .single()
-  
-  const openingHour = Number(settings?.opening_hour) || 8
-  const closingHour = Number(settings?.closing_hour) || 22
-  const dailyHours = closingHour - openingHour
+  if (resError) return { tenants: [], globalStats: emptyStats, error: 'Erreur chargement réservations' }
 
   // --- Process Tenant History ---
   const now = dayjs().tz(TIMEZONE)
@@ -94,7 +98,7 @@ export async function getStatistics(): Promise<{
     if (tenant) {
       tenant.totalReservations++
       const start = dayjs(res.start_time).tz(TIMEZONE)
-      const formattedRes = {
+      const formattedRes: ReservationSummary = {
         id: res.id,
         spaceName: spaceMap.get(res.space_id) || 'Inconnu',
         date: start.format('DD MMMM YYYY'),
@@ -127,7 +131,7 @@ export async function getStatistics(): Promise<{
   
   let mostPopularSpaceName = 'Aucun'
   let mostPopularCount = 0
-  let totalResCount = reservations.length
+  const totalResCount = reservations.length
 
   spaceCounts.forEach((count, id) => {
     if (count > mostPopularCount) {

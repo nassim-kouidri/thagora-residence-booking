@@ -55,7 +55,7 @@ export default async function ClientDashboard() {
           <div>
             <h2 className="text-2xl font-bold text-white">Réservations</h2>
             <p className="text-zinc-400 text-sm mt-1">
-              Réservez vos créneaux pour aujourd'hui ou demain. (Max 1h30 / espace / jour)
+              Réservez vos créneaux pour aujourd&apos;hui ou demain. (Max 1h30 / espace / jour)
             </p>
           </div>
         </div>

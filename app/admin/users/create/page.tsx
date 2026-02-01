@@ -7,7 +7,7 @@ import { getUsers } from "./actions";
 export const dynamic = 'force-dynamic'
 
 export default async function CreateUserPage() {
-  const users = await getUsers() as any[] // Quick fix for type inference if needed
+  const users = await getUsers()
 
   return (
     <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8">
@@ -31,7 +31,7 @@ export default async function CreateUserPage() {
                     Nouveau Locataire
                 </h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                    Créez un compte d'accès pour un résident.
+                    Créez un compte d&apos;accès pour un résident.
                 </p>
             </div>
             

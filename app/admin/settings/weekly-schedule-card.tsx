@@ -90,7 +90,7 @@ export default function WeeklyScheduleCard({ schedules }: { schedules: WeeklySch
       </div>
 
       {(state?.error || state?.success) && (
-        <div className="mt-4">
+        <div className="mt-4" role="status" aria-live="polite">
           {state?.error && <p className="text-red-400 text-xs">{state.error}</p>}
           {state?.success && <p className="text-green-400 text-xs">{state.message}</p>}
         </div>

@@ -1,8 +1,11 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import ConfirmDialog from '@/app/components/confirm-dialog'
+import { useToast } from '@/app/components/toast-provider'
 import {
   upsertDateScheduleException,
   deleteDateScheduleException,
@@ -37,7 +40,11 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
   const [state, formAction] = useActionState(upsertDateScheduleException, initialState)
   const [mode, setMode] = useState<'hours' | 'closed'>('hours')
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [dateFr, setDateFr] = useState('')
+
+  const router = useRouter()
+  const toast = useToast()
 
   const dateInputRef = useRef<HTMLInputElement | null>(null)
   const pendingDateDigitsBeforeCaretRef = useRef<number | null>(null)
@@ -96,11 +103,22 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
   const dateDigitsCount = dateFr.replace(/\D/g, '').length
   const dateIso = frDateToIso(dateFr)
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Supprimer cette exception ?')) return
-    setIsDeleting(id)
-    await deleteDateScheduleException(id)
+  const handleDelete = (id: number) => {
+    setConfirmDeleteId(id)
+  }
+
+  const executeDelete = async () => {
+    if (confirmDeleteId == null) return
+    setIsDeleting(confirmDeleteId)
+    const result = await deleteDateScheduleException(confirmDeleteId)
+    if (result.success) {
+      toast.success(result.message)
+      router.refresh()
+    } else {
+      toast.error(result.message)
+    }
     setIsDeleting(null)
+    setConfirmDeleteId(null)
   }
 
   return (
@@ -132,6 +150,7 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
                 onClick={() => handleDelete(ex.id)}
                 disabled={isDeleting === ex.id}
                 className="text-red-400 hover:text-red-300 text-xs px-2 py-1 bg-red-900/10 hover:bg-red-900/20 rounded border border-red-900/30"
+                aria-label={`Supprimer l'exception du ${isoToFrDate(ex.date)}`}
               >
                 {isDeleting === ex.id ? '...' : '✕'}
               </button>
@@ -250,10 +269,26 @@ export default function DateExceptionsCard({ exceptions }: { exceptions: DateSch
             Enregistrer
           </button>
 
-          {state?.error && <p className="text-red-400 text-xs">{state.error}</p>}
-          {state?.success && <p className="text-green-400 text-xs">{state.message}</p>}
+          <div role="status" aria-live="polite">
+            {state?.error && <p className="text-red-400 text-xs">{state.error}</p>}
+            {state?.success && <p className="text-green-400 text-xs">{state.message}</p>}
+          </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title="Supprimer cette exception ?"
+        description="Cette date reviendra à la configuration hebdomadaire (ou sera considérée fermée si non configurée)."
+        confirmLabel="Supprimer"
+        destructive
+        loading={confirmDeleteId != null && isDeleting === confirmDeleteId}
+        onClose={() => {
+          if (confirmDeleteId != null && isDeleting === confirmDeleteId) return
+          setConfirmDeleteId(null)
+        }}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

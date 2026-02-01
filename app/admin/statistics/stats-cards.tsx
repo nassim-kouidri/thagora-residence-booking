@@ -46,7 +46,7 @@ export default function StatsCards({ stats }: { stats: GlobalStats | null }) {
         
         {/* Active Days List */}
         <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-          <h3 className="text-[#F3E5AB] font-semibold mb-6">Jours d'activité</h3>
+          <h3 className="text-[#F3E5AB] font-semibold mb-6">Jours d&apos;activité</h3>
           <div className="space-y-4">
             {stats.activeDays.map((day, idx) => {
               // Scale based on the most active day

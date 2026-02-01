@@ -42,8 +42,6 @@ export function generateSmartSlots(
   selectedDate: Date,
   collectiveSlots: CollectiveSlot[]
 ): GeneratedSlot[] {
-  const result: GeneratedSlot[] = []
-  
   // 1. Récupérer les créneaux collectifs du jour
   const currentDayOfWeek = dayjs(selectedDate).day() // 0=Dimanche
   const todaysCollectiveSlots = collectiveSlots.filter(cs => cs.day_of_week === currentDayOfWeek)

@@ -1,7 +1,10 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { addCollectiveSlot, deleteCollectiveSlot, type CollectiveSlot } from '@/app/admin/settings/collective-actions'
+import ConfirmDialog from '@/app/components/confirm-dialog'
+import { useToast } from '@/app/components/toast-provider'
 
 const DAYS = [
   'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'
@@ -18,8 +21,12 @@ const TIME_PATTERN = '^([01]\\d|2[0-3]):[0-5]\\d$'
 export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[] }) {
   const [state, formAction] = useActionState(addCollectiveSlot, initialState)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+
+  const router = useRouter()
+  const toast = useToast()
 
   const startInputRef = useRef<HTMLInputElement | null>(null)
   const endInputRef = useRef<HTMLInputElement | null>(null)
@@ -149,18 +156,29 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
     })
   }, [endTime])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Supprimer ce créneau collectif ?')) return
-    setIsDeleting(id)
-    await deleteCollectiveSlot(id)
+  const handleDelete = (id: number) => {
+    setConfirmDeleteId(id)
+  }
+
+  const executeDelete = async () => {
+    if (confirmDeleteId == null) return
+    setIsDeleting(confirmDeleteId)
+    const result = await deleteCollectiveSlot(confirmDeleteId)
+    if (result.success) {
+      toast.success(result.message)
+      router.refresh()
+    } else {
+      toast.error(result.message)
+    }
     setIsDeleting(null)
+    setConfirmDeleteId(null)
   }
 
   return (
     <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 h-full flex flex-col">
       <h2 className="text-xl font-bold text-[#F3E5AB] mb-4">Créneaux Collectifs</h2>
       <p className="text-zinc-400 text-sm mb-6">
-        Ajoutez des plages horaires "Accès Libre" (ex: Portes ouvertes). La réservation ne sera pas nécessaire sur ces créneaux.
+        Ajoutez des plages horaires &quot;Accès Libre&quot; (ex: Portes ouvertes). La réservation ne sera pas nécessaire sur ces créneaux.
       </p>
 
       {/* Liste des créneaux existants */}
@@ -180,6 +198,7 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
               onClick={() => handleDelete(slot.id)}
               disabled={isDeleting === slot.id}
               className="text-red-400 hover:text-red-300 text-xs px-2 py-1 bg-red-900/10 hover:bg-red-900/20 rounded border border-red-900/30"
+              aria-label={`Supprimer le créneau collectif du ${DAYS[slot.day_of_week]} (${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)})`}
             >
               {isDeleting === slot.id ? '...' : '✕'}
             </button>
@@ -250,10 +269,26 @@ export default function CollectiveSlotsCard({ slots }: { slots: CollectiveSlot[]
             Ajouter le créneau
           </button>
 
-          {state?.error && <p className="text-red-400 text-xs mt-2">{state.error}</p>}
-          {state?.success && <p className="text-green-400 text-xs mt-2">{state.message}</p>}
+          <div role="status" aria-live="polite">
+            {state?.error && <p className="text-red-400 text-xs mt-2">{state.error}</p>}
+            {state?.success && <p className="text-green-400 text-xs mt-2">{state.message}</p>}
+          </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title="Supprimer ce créneau collectif ?"
+        description="Les créneaux standards qui se chevauchent redeviendront visibles et réservables."
+        confirmLabel="Supprimer"
+        destructive
+        loading={confirmDeleteId != null && isDeleting === confirmDeleteId}
+        onClose={() => {
+          if (confirmDeleteId != null && isDeleting === confirmDeleteId) return
+          setConfirmDeleteId(null)
+        }}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/utils/supabase/admin'
 import LogoutButton from '@/app/components/logout-button'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getCollectiveSlots } from '@/app/admin/settings/collective-actions'
 import PlanningGrid from './planning-grid'
 
@@ -80,7 +79,7 @@ export default async function AdminDashboard() {
                             <span className="text-zinc-600 group-hover:text-[#D4AF37] transition-colors text-xl">↗</span>
                         </div>
                         <p className="text-zinc-500 text-sm leading-relaxed group-hover:text-zinc-400 transition-colors">
-                            Analysez le taux d'occupation et l'historique des réservations.
+                            Analysez le taux d&apos;occupation et l&apos;historique des réservations.
                         </p>
                     </div>
                 </Link>
@@ -93,7 +92,7 @@ export default async function AdminDashboard() {
                             <span className="text-zinc-600 group-hover:text-[#D4AF37] transition-colors text-xl">⚙</span>
                         </div>
                         <p className="text-zinc-500 text-sm leading-relaxed group-hover:text-zinc-400 transition-colors">
-                            Gérez les horaires d'ouverture et les créneaux libres.
+                            Gérez les horaires d&apos;ouverture et les créneaux libres.
                         </p>
                     </div>
                 </Link>

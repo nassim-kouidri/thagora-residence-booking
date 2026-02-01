@@ -56,7 +56,9 @@ export async function getCollectiveSlots() {
   return data as CollectiveSlot[]
 }
 
-export async function addCollectiveSlot(prevState: any, formData: FormData) {
+type PostgrestErrorWithCode = { code?: string }
+
+export async function addCollectiveSlot(_prevState: unknown, formData: FormData) {
   const dayOfWeek = parseInt(formData.get('dayOfWeek') as string)
   const startTimeRaw = formData.get('startTime') as string
   const endTimeRaw = formData.get('endTime') as string
@@ -150,7 +152,8 @@ export async function addCollectiveSlot(prevState: any, formData: FormData) {
   if (error) {
     console.error('Erreur ajout créneau collectif:', error)
     // Si une contrainte unique est ajoutée en DB, on renvoie un message clair.
-    if ((error as any)?.code === '23505') {
+    const code = (error as unknown as PostgrestErrorWithCode | null)?.code
+    if (code === '23505') {
       const dayLabel = DAYS[dayOfWeek] ?? 'ce jour'
       return {
         error: `Impossible d'ajouter ce créneau collectif : un créneau identique existe déjà pour le ${dayLabel.toLowerCase()} (${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}).`,
